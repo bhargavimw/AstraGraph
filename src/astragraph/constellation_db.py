@@ -1,18 +1,17 @@
-"""Load constellation star data into undirected NetworkX graphs.
+"""Constellation graph database built from ``data/constellations.json``.
 
-The database is intentionally read-only from the caller's perspective: every
-constellation is built once at construction time, and each graph contains star
-nodes (``name``, ``ra``, ``dec``, ``magnitude``) plus edges for the traditional
-stick-figure lines.
+Each constellation is an undirected :class:`networkx.Graph` whose nodes carry
+the attributes ``name``, ``ra``, ``dec`` and ``magnitude``. Edges encode the
+traditional stick-figure lines between stars.
 
-Coordinates are J2000.0 decimal degrees. Right ascension is in ``[0, 360)`` and
-declination is in ``[-90, 90]``.
+Coordinates are J2000.0 ICRS decimal degrees: right ascension in ``[0, 360)``
+and declination in ``[-90, 90]``.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator, Mapping
+from collections.abc import Mapping
 from math import isfinite
 from pathlib import Path
 from types import MappingProxyType
@@ -22,28 +21,19 @@ import networkx as nx
 import yaml
 
 DEFAULT_CONFIG_PATH = Path("config.yaml")
-_REQUIRED_STAR_FIELDS = ("ra", "dec", "magnitude")
 
 
 class ConstellationDataError(ValueError):
     """Raised when constellation source data is malformed or inconsistent."""
 
 
-class StarRecord(TypedDict):
-    """A star entry in ``data/constellations.json``."""
+class StarAttributes(TypedDict):
+    """Attributes stored on each star node."""
 
     name: str
     ra: float
     dec: float
     magnitude: float
-
-
-class ConstellationRecord(TypedDict):
-    """A constellation entry in ``data/constellations.json``."""
-
-    abbreviation: str
-    stars: list[StarRecord]
-    lines: list[list[str]]
 
 
 def load_config(config_path: str | Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
@@ -68,8 +58,8 @@ def load_config(config_path: str | Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]
 def resolve_path(path_value: str | Path, *, relative_to: str | Path) -> Path:
     """Resolve ``path_value`` relative to the config file's directory.
 
-    Absolute paths are returned unchanged (after ``~`` expansion), while relative
-    paths are anchored at the parent directory of ``relative_to``.
+    Absolute paths are returned unchanged (after ``~`` expansion), while
+    relative paths are anchored at the parent directory of ``relative_to``.
     """
     path = Path(path_value).expanduser()
     if not path.is_absolute():
@@ -94,9 +84,9 @@ def _number(value: object, *, field: str, star_name: str) -> float:
 def build_constellation_graph(record: Mapping[str, Any]) -> nx.Graph:
     """Build one undirected constellation graph from a raw data record.
 
-    This function is pure: it does not mutate ``record`` and returns a new graph.
-    Validation ensures every line references a declared star, coordinates are in
-    range, and the resulting graph is connected.
+    This function is pure: it does not mutate ``record`` and returns a new
+    graph. Validation ensures every line references a declared star,
+    coordinates are in range, and the resulting graph is connected.
     """
     raw_stars = record.get("stars")
     raw_lines = record.get("lines")
@@ -153,7 +143,9 @@ def build_constellation_graph(record: Mapping[str, Any]) -> nx.Graph:
                 f"Line references unknown star {missing!r}: {line!r}"
             )
         if source == target:
-            raise ConstellationDataError(f"Line cannot connect a star to itself: {line!r}")
+            raise ConstellationDataError(
+                f"Line cannot connect a star to itself: {line!r}"
+            )
         graph.add_edge(source, target)
 
     if graph.number_of_nodes() > 1 and not nx.is_connected(graph):
@@ -185,43 +177,21 @@ class ConstellationDB:
 
     Example:
         >>> db = ConstellationDB.from_config("config.yaml")
-        >>> orion = db.get("Orion")
-        >>> sorted(orion.nodes(data=True))[0][1]["name"]
-        'Alnilam'
+        >>> db.load()
+        >>> orion = db.get_constellation("Orion")
+        >>> orion.nodes["Betelgeuse"]["ra"]
+        88.7929
     """
 
-    def __init__(self, data_path: str | Path) -> None:
-        self._data_path = Path(data_path).expanduser().resolve()
-        payload = _load_payload(self._data_path)
-
-        metadata = payload.get("metadata", {})
-        if not isinstance(metadata, Mapping):
-            raise ConstellationDataError("'metadata' must be a JSON object")
-
-        raw_constellations = payload.get("constellations")
-        if not isinstance(raw_constellations, Mapping) or not raw_constellations:
-            raise ConstellationDataError(
-                "'constellations' must be a non-empty JSON object"
-            )
-
-        built: dict[str, nx.Graph] = {}
-        for name, raw_record in raw_constellations.items():
-            if not isinstance(name, str) or not name.strip():
-                raise ConstellationDataError(f"Invalid constellation name: {name!r}")
-            if not isinstance(raw_record, Mapping):
-                raise ConstellationDataError(
-                    f"Invalid record for constellation {name!r}"
-                )
-
-            graph = build_constellation_graph(raw_record)
-            abbreviation = raw_record.get("abbreviation")
-            graph.graph["name"] = name
-            if isinstance(abbreviation, str) and abbreviation:
-                graph.graph["abbreviation"] = abbreviation
-            built[name] = graph
-
-        self._metadata: Mapping[str, Any] = MappingProxyType(dict(metadata))
-        self._constellations: Mapping[str, nx.Graph] = MappingProxyType(built)
+    def __init__(
+        self, data_path: str | Path | None = None
+    ) -> None:
+        self._data_path = (
+            Path(data_path).expanduser().resolve() if data_path else None
+        )
+        self._constellations: dict[str, nx.Graph] = {}
+        self._metadata: dict[str, Any] = {}
+        self._loaded = False
 
     @classmethod
     def from_config(
@@ -241,47 +211,111 @@ class ConstellationDB:
             )
         return cls(resolve_path(data_path, relative_to=path))
 
+    def load(self) -> None:
+        """Load constellation data from the configured JSON file."""
+        if self._data_path is None:
+            raise ConstellationDataError("No data path configured for this database")
+
+        payload = _load_payload(self._data_path)
+
+        metadata = payload.get("metadata", {})
+        if not isinstance(metadata, Mapping):
+            raise ConstellationDataError("'metadata' must be a JSON object")
+        self._metadata = dict(metadata)
+
+        raw_constellations = payload.get("constellations")
+        if not isinstance(raw_constellations, Mapping) or not raw_constellations:
+            raise ConstellationDataError(
+                "'constellations' must be a non-empty JSON object"
+            )
+
+        built: dict[str, nx.Graph] = {}
+        for name, raw_record in raw_constellations.items():
+            if not isinstance(name, str) or not name.strip():
+                raise ConstellationDataError(
+                    f"Invalid constellation name: {name!r}"
+                )
+            if not isinstance(raw_record, Mapping):
+                raise ConstellationDataError(
+                    f"Invalid record for constellation {name!r}"
+                )
+
+            graph = build_constellation_graph(raw_record)
+            graph.graph["name"] = name
+            abbreviation = raw_record.get("abbreviation")
+            if isinstance(abbreviation, str) and abbreviation:
+                graph.graph["abbreviation"] = abbreviation
+            built[name] = graph
+
+        self._constellations = built
+        self._loaded = True
+
+    def _ensure_loaded(self) -> None:
+        if not self._loaded:
+            self.load()
+
     @property
-    def data_path(self) -> Path:
+    def data_path(self) -> Path | None:
         """Absolute path of the JSON dataset backing this database."""
         return self._data_path
 
     @property
     def metadata(self) -> Mapping[str, Any]:
         """Dataset metadata (epoch, coordinate frame, units, and so on)."""
-        return self._metadata
+        return MappingProxyType(self._metadata)
 
-    @property
-    def constellations(self) -> Mapping[str, nx.Graph]:
-        """Read-only mapping of constellation names to NetworkX graphs."""
-        return self._constellations
-
-    def names(self) -> tuple[str, ...]:
+    def list_constellations(self) -> list[str]:
         """Return all constellation names in deterministic alphabetical order."""
-        return tuple(sorted(self._constellations))
+        self._ensure_loaded()
+        return sorted(self._constellations)
 
-    def get(self, name: str) -> nx.Graph:
+    def get_constellation(self, name: str) -> nx.Graph:
         """Return the graph for ``name``.
 
         Raises:
             KeyError: If the constellation is not present in the database.
         """
+        self._ensure_loaded()
         try:
             return self._constellations[name]
         except KeyError as exc:
-            known = ", ".join(self.names())
+            known = ", ".join(self.list_constellations())
             raise KeyError(
                 f"Unknown constellation {name!r}. Available: {known}"
             ) from exc
 
-    def __getitem__(self, name: str) -> nx.Graph:
-        return self.get(name)
+    def get_star(self, name: str) -> dict[str, Any]:
+        """Return ``{"name", "ra", "dec", "magnitude"}`` for the named star.
+
+        Searches every loaded constellation. Star names are expected to be
+        unique across the dataset.
+
+        Raises:
+            KeyError: If the star is not found in any constellation.
+        """
+        self._ensure_loaded()
+        for graph in self._constellations.values():
+            if name in graph:
+                attrs = graph.nodes[name]
+                return {
+                    "name": attrs.get("name", name),
+                    "ra": attrs["ra"],
+                    "dec": attrs["dec"],
+                    "magnitude": attrs["magnitude"],
+                }
+        raise KeyError(f"Star {name!r} not found in any constellation")
 
     def __contains__(self, name: object) -> bool:
+        self._ensure_loaded()
         return name in self._constellations
 
-    def __iter__(self) -> Iterator[str]:
+    def __len__(self) -> int:
+        self._ensure_loaded()
+        return len(self._constellations)
+
+    def __iter__(self):
+        self._ensure_loaded()
         return iter(self._constellations)
 
-    def __len__(self) -> int:
-        return len(self._constellations)
+    def __getitem__(self, name: str) -> nx.Graph:
+        return self.get_constellation(name)
