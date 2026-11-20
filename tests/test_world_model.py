@@ -232,3 +232,26 @@ def test_invalid_inputs_raise(model: SkyWorldModel) -> None:
         model.get_constellation_at(when, *NYC, 0.0, 120.0)
     with pytest.raises(KeyError):
         model.get_star_position("Not A Star", when, *NYC)
+
+
+def test_demo_script_lists_correct_visible_constellations(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    import importlib.util
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parents[1] / "scripts" / "demo_world_model.py"
+    spec = importlib.util.spec_from_file_location("demo_world_model", script)
+    assert spec and spec.loader
+    demo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(demo)
+
+    assert demo.main(["--time", "2024-01-15 21:00", "--tz", "America/New_York"]) == 0
+    out = capsys.readouterr().out
+    now_section = out.split("Visible constellations right now:")[1].split("Visible constellations in")[0]
+    assert "Orion" in now_section and "Canis Major" in now_section
+    assert "Scorpius" not in now_section
+    rising = out.split("Rising into view:")[1].split("\n")[0]
+    assert "Bootes" in rising and "Virgo" in rising  # spring stars rise before midnight
+    assert "Orion (centre) rises 2024-01-15 15:49 EST" in out
+    assert "Sky map now" in out
