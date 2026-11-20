@@ -9,7 +9,7 @@ on a dark background, optional streaks (aircraft trails) and occluding masks
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 
 import networkx as nx
@@ -135,3 +135,57 @@ def constellation_stars(
         for name, (x, y) in layout.items()
         if name not in exclude
     ]
+
+
+def demo_sky_clip(
+    graph: nx.Graph,
+    frames: int,
+    *,
+    seed: int = 0,
+    width: int = 960,
+    height: int = 720,
+    fps: float = 30.0,
+    cloud_start: int | None = None,
+) -> Iterator[NDArray[np.uint8]]:
+    """Yield frames of a demo night sky around one constellation.
+
+    The scene has slight hand-shake drift, a satellite crossing at about
+    2 degrees/second, a bright planet near the constellation (not in the
+    catalog) and, from ``cloud_start`` (default: halfway), a cloud hiding up
+    to two of the faintest stars while always leaving five visible.
+    """
+    plane_extent = 20.0  # degrees, generous for the largest constellations
+    scale = 0.7 * min(width, height) / plane_extent  # pixels per degree
+    layout = constellation_layout(graph, Similarity(scale, 0.25, (width / 2, height / 2)))
+
+    hidden = max(0, min(2, graph.number_of_nodes() - 5))
+    faintest = sorted(graph.nodes, key=lambda n: -graph.nodes[n]["magnitude"])[:hidden]
+    cloud_boxes = [
+        (int(layout[s][0]) - 18, int(layout[s][1]) - 18,
+         int(layout[s][0]) + 18, int(layout[s][1]) + 18)
+        for s in faintest
+    ]
+    start_cloud = frames // 2 if cloud_start is None else cloud_start
+
+    xs = [p[0] for p in layout.values()]
+    ys = [p[1] for p in layout.values()]
+    planet_xy = (min(max(xs) + 60, width - 30), (min(ys) + max(ys)) / 2)
+
+    speed_px = 2.0 / fps * scale
+    direction = np.array([0.8, -0.6])
+    sat_start = np.array([60.0, height - 80.0])
+
+    for k in range(frames):
+        drift = (2.0 * math.sin(k / 9.0), 1.5 * math.cos(k / 7.0))  # hand shake
+        transform = Similarity(scale, 0.25, (width / 2 + drift[0], height / 2 + drift[1]))
+        stars = constellation_stars(graph, transform)
+        stars.append(SyntheticStar(planet_xy[0] + drift[0], planet_xy[1] + drift[1], 252.0, 2.0))
+        sat = sat_start + direction * speed_px * k
+        stars.append(
+            SyntheticStar(float(sat[0] + drift[0]), float(sat[1] + drift[1]), 235.0, 1.4)
+        )
+        frame = render_star_field(stars, width, height, noise_std=3.0, seed=seed + k)
+        if k >= start_cloud:
+            for box in cloud_boxes:
+                frame = apply_occlusion(frame, box)
+        yield frame

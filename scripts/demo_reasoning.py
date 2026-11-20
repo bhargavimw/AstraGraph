@@ -20,7 +20,6 @@ red = satellite track, magenta = anomaly).
 from __future__ import annotations
 
 import argparse
-import math
 import sys
 from collections import Counter
 from collections.abc import Iterator
@@ -34,15 +33,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from astragraph.constellation_db import ConstellationDB  # noqa: E402
-from astragraph.geometry import Similarity  # noqa: E402
 from astragraph.pipeline import FrameReport, PipelineConfig, SkyPipeline  # noqa: E402
-from astragraph.synthetic import (  # noqa: E402
-    SyntheticStar,
-    apply_occlusion,
-    constellation_layout,
-    constellation_stars,
-    render_star_field,
-)
+from astragraph.synthetic import demo_sky_clip  # noqa: E402
 from astragraph.temporal import EventType  # noqa: E402
 
 WIDTH, HEIGHT = 960, 720
@@ -55,46 +47,7 @@ def synthetic_clip(
     db: ConstellationDB, name: str, frames: int, seed: int
 ) -> Iterator[NDArray[np.uint8]]:
     """Yield frames of a synthetic sky (see module docstring)."""
-    graph = db[name]
-    plane_extent = 20.0  # degrees, generous for the largest constellations
-    scale = 0.7 * min(WIDTH, HEIGHT) / plane_extent  # pixels per degree
-    base_transform = Similarity(scale, 0.25, (WIDTH / 2, HEIGHT / 2))
-    layout = constellation_layout(graph, base_transform)
-
-    # Cloud over the faintest stars from mid-clip: up to two, always leaving
-    # at least five visible so the partial view stays identifiable.
-    hidden = max(0, min(2, graph.number_of_nodes() - 5))
-    faintest = sorted(graph.nodes, key=lambda n: -graph.nodes[n]["magnitude"])[:hidden]
-    cloud_boxes = [
-        (int(layout[s][0]) - 18, int(layout[s][1]) - 18,
-         int(layout[s][0]) + 18, int(layout[s][1]) + 18)
-        for s in faintest
-    ]
-
-    # Planet: bright point near the constellation but not part of it.
-    xs = [p[0] for p in layout.values()]
-    ys = [p[1] for p in layout.values()]
-    planet_xy = (min(max(xs) + 60, WIDTH - 30), (min(ys) + max(ys)) / 2)
-
-    # Satellite: ~2 degrees/second at 30 fps, crossing diagonally.
-    speed_px = 2.0 / 30.0 * scale
-    direction = np.array([0.8, -0.6])
-    sat_start = np.array([60.0, HEIGHT - 80.0])
-
-    for k in range(frames):
-        drift = (2.0 * math.sin(k / 9.0), 1.5 * math.cos(k / 7.0))  # hand shake
-        transform = Similarity(
-            scale, 0.25, (WIDTH / 2 + drift[0], HEIGHT / 2 + drift[1])
-        )
-        stars = constellation_stars(graph, transform)
-        stars.append(SyntheticStar(planet_xy[0] + drift[0], planet_xy[1] + drift[1], 252.0, 2.0))
-        sat = sat_start + direction * speed_px * k
-        stars.append(SyntheticStar(float(sat[0] + drift[0]), float(sat[1] + drift[1]), 235.0, 1.4))
-        frame = render_star_field(stars, WIDTH, HEIGHT, noise_std=3.0, seed=seed + k)
-        if k >= frames // 2:
-            for box in cloud_boxes:
-                frame = apply_occlusion(frame, box)
-        yield frame
+    return demo_sky_clip(db[name], frames, seed=seed, width=WIDTH, height=HEIGHT)
 
 
 def read_video(path: Path) -> Iterator[NDArray[np.uint8]]:
