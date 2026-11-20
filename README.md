@@ -5,17 +5,16 @@ images by matching the *shape* of the stars rather than trusting the phone's
 compass, predicts where everything will be at any time, and teaches the
 connections behind it.
 
-## What it does
+## Features
 
-- **Live Camera (SkyFinder)**: detects stars in a webcam stream, photo or
-  video, identifies the constellation and draws it. It still works when clouds
-  hide some stars: the hidden ones are inferred and drawn as "ghosts".
-  Satellites (fast, straight-line movers) and bright objects missing from the
-  catalog (such as planets) are flagged.
-- **Time Travel**: slide up to 12 hours either way to see the predicted sky,
-  e.g. *"In 3 hours, Orion will be at azimuth 220°, altitude 45°."*
-- **Learn**: key stars, the best month to look, where a constellation is right
-  now and when it rises and sets tonight.
+| Mode | What you can do |
+| --- | --- |
+| 🔭 **Live Camera** | Point a webcam at the sky, upload a photo or video, or run the built-in demo sky. Stars get green circles and the constellation gets gold lines with its name and confidence. Stars hidden by clouds are inferred and drawn as cyan "ghosts", satellites are tracked in red with their speed and direction, and bright objects missing from the catalog (such as planets) are flagged. |
+| ⏳ **Time Travel** | Slide from −12 to +12 hours and watch the sky turn on a live sky chart: *"In 3 hours, Orion will be at azimuth 220°, altitude 45°."* It also warns you when the Sun is up. |
+| 📚 **Learn** | Pick a constellation to see its chart, key stars, the best month to look, where it is right now and when it rises and sets tonight. |
+| 🎓 **Academy** | **Quiz:** click stars to draw a constellation; you get a score, a "right shape, wrong stars" hint and the correct answer, with an optional hard mode that adds distractor stars. **Info:** the mythology, key stars with facts, best season and a fun fact for each constellation. |
+
+Everything runs locally. Images never leave your computer.
 
 ## Why it is useful
 
@@ -28,6 +27,26 @@ connections behind it.
   JPL DE421) and agree with an independent implementation to about 0.0001°.
 - **Private by design**: every computation runs locally; no images or
   location data are sent anywhere.
+
+## How it works
+
+1. **See:** OpenCV finds bright point sources and filters out trails,
+   noise and hot pixels (`detect.py`). A tracker keeps each star's ID stable
+   from frame to frame (`track.py`).
+2. **Connect:** stars become a graph. Union-find groups nearby stars, graph
+   diffs produce events (appears, disappears, moves, satellite), and a
+   geometric subgraph match against the constellation database identifies
+   the figure regardless of rotation, zoom or hidden stars (`temporal.py`,
+   `matcher.py`).
+3. **Reason:** a forward-chaining rule engine turns facts into conclusions
+   such as *identified*, *partial view → draw ghosts*, *satellite* and
+   *anomaly* (`reason.py`).
+4. **Predict:** Skyfield and the JPL DE421 ephemeris compute exactly where
+   every star is for any time and place (`world_model.py`).
+5. **Teach:** the same constellation graphs power the quiz, which grades
+   your drawing as a graph (`academy.py`).
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the details.
 
 ## Installation
 
@@ -55,7 +74,10 @@ or `python scripts/run_app.py`. Streamlit opens http://localhost:8501.
 - **Live Camera**: choose *Demo sky* to see the full pipeline on a rendered
   sky, *Webcam* for a live stream (allow camera access; browsers only allow it
   on `localhost` or HTTPS), or upload a photo/video.
-- Set your location and time zone in the sidebar for Time Travel and Learn.
+- **Academy**: try the quiz (click two stars to draw a line between them)
+  or read a constellation's info card.
+- Set your location and time zone in the sidebar for Time Travel, Learn and
+  the Academy info card.
 
 Command-line demos and tests:
 
@@ -91,7 +113,7 @@ pytest                                      # full test suite
                                      ▼                             ▼
                           ┌───────────────────────────────────────────────┐
                           │ app/demo.py (Streamlit)                       │
-                          │ Live Camera · Time Travel · Learn             │
+                          │ Live Camera · Time Travel · Learn · Academy   │
                           └───────────────────────────────────────────────┘
 ```
 
@@ -106,15 +128,28 @@ pytest                                      # full test suite
 | `spatial_plan.py` | Dijkstra over a sky-region graph to suggest a camera pan around obstructions |
 | `pipeline.py` | Runs detector → tracker → temporal graph → matcher → reasoner per frame |
 | `world_model.py` | Star positions, visibility, constellation lookup, rise/set times, Sun altitude |
+| `academy.py` | Constellation info, star profiles, connect-the-dots quizzes graded as graphs |
 | `app/` | Streamlit app and OpenCV overlay helpers |
 
 ## Screenshots
 
-> _Screenshots coming soon._
->
-> - Live Camera: constellation overlay with ghost stars and a satellite
-> - Time Travel: predicted sky chart
-> - Learn: constellation card with rise/set times
+**Live Camera:** Orion identified in the demo sky, with two cloud-hidden stars
+inferred as ghosts and a planet flagged as "not in catalog".
+
+![Live Camera](docs/screenshots/live_camera.jpg)
+
+**Time Travel:** the sky over New York 9 hours ahead, with Orion highlighted.
+
+![Time Travel](docs/screenshots/time_travel.png)
+
+**Academy quiz:** a graded attempt at Orion. Green lines are correct, red is
+not part of the figure, and dashed gold lines were missing.
+
+![Academy quiz](docs/screenshots/academy_quiz.png)
+
+**Academy info card:** mythology, key stars and live position.
+
+![Academy info](docs/screenshots/academy_info.png)
 
 ## Configuration
 
@@ -134,9 +169,22 @@ thresholds and the default location for the world model.
   computed on the device.
 - Add planets and the Moon to Time Travel.
 - Package as a mobile app with on-device processing.
+- More Academy content: all 88 constellations, the exoplanet transit
+  light-curve lesson, binary stars and orbital hierarchies from the original
+  design, and progress tracking across quizzes.
 
-## Credits
+## Credits and acknowledgments
 
-- Star data: [HYG Database](https://github.com/astronexus/HYG-Database) v4.1, CC BY-SA 4.0.
-- Ephemeris: JPL DE421 via [Skyfield](https://rhodesmill.org/skyfield/) and `skyfield-data`.
-- Constellation boundaries: IAU, via Skyfield.
+- Star data: [HYG Database](https://github.com/astronexus/HYG-Database) v4.1
+  by David Nash (astronexus), CC BY-SA 4.0. `data/bright_stars.csv` is a
+  derived subset under the same license.
+- Ephemeris: NASA JPL DE421, via [Skyfield](https://rhodesmill.org/skyfield/)
+  by Brandon Rhodes and the `skyfield-data` package.
+- Constellation boundaries: International Astronomical Union, via Skyfield.
+- Reference positions in the tests were cross-checked with
+  [Astropy](https://www.astropy.org/) (ERFA / IAU SOFA).
+- Built with [OpenCV](https://opencv.org/), [NetworkX](https://networkx.org/),
+  [Streamlit](https://streamlit.io/), [streamlit-webrtc](https://github.com/whitphx/streamlit-webrtc),
+  [Plotly](https://plotly.com/python/) and [Matplotlib](https://matplotlib.org/).
+- Constellation stories draw on Greek mythology as recorded in classical
+  sources such as Aratus, Eratosthenes and Ovid.
