@@ -241,6 +241,37 @@ class ConstellationMatcher:
         _, template, candidate = best
         return self._result(points, template, candidate)
 
+    def refit(
+        self,
+        star_cluster: Mapping[int, Point] | Iterable[_HasPosition],
+        previous: MatchResult,
+        constellation_db: Any,
+    ) -> MatchResult | None:
+        """Update a previous match with new star positions (cheap, per frame).
+
+        Reuses ``previous.mapping`` for the stars still present and refits the
+        similarity transform. Returns ``None`` if too few mapped stars remain
+        or the fit no longer holds, in which case call :meth:`match` again.
+        """
+        if not previous.matched:
+            return None
+        points = _positions(star_cluster)
+        template = next(
+            (t for t in self.templates(constellation_db) if t.name == previous.constellation),
+            None,
+        )
+        if template is None:
+            return None
+        mapping = {
+            obs: template.index(name)
+            for obs, name in previous.mapping.items()
+            if obs in points
+        }
+        if len(mapping) < self.config.min_matched:
+            return None
+        candidate = self._verify(points, mapping, template)
+        return None if candidate is None else self._result(points, template, candidate)
+
     # ----------------------------------------------------------- internals
     def match_template(
         self, points: Mapping[int, Point], template: ConstellationTemplate
