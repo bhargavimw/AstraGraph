@@ -231,6 +231,52 @@ class SkyWorldModel:
         alt, az, _ = apparent.altaz()
         return float(az.degrees), float(alt.degrees)
 
+    def altaz_many(
+        self,
+        ra_degrees: Sequence[float],
+        dec_degrees: Sequence[float],
+        time_utc: datetime,
+        lat: float,
+        lon: float,
+    ) -> list[tuple[float, float]]:
+        """Vectorised :meth:`altaz`: (azimuth, altitude) for many J2000 positions."""
+        if len(ra_degrees) == 0:
+            return []
+        stars = Star(
+            ra_hours=np.asarray(ra_degrees, dtype=float) / 15.0,
+            dec_degrees=np.asarray(dec_degrees, dtype=float),
+        )
+        apparent = self._observer(lat, lon).at(self._time(time_utc)).observe(stars).apparent()
+        alt, az, _ = apparent.altaz()
+        return [(float(a), float(h)) for a, h in zip(az.degrees, alt.degrees)]
+
+    def best_viewing_month(
+        self,
+        name: str,
+        lat: float,
+        lon: float,
+        *,
+        tz: tzinfo = timezone.utc,
+        local_hour: int = 21,
+        year: int = 2025,
+    ) -> tuple[int, float] | None:
+        """Month (1-12) when a constellation stands highest at ``local_hour``.
+
+        Samples the 15th of each month at ``local_hour`` local time and returns
+        ``(month, altitude)`` for the best one, or ``None`` if the
+        constellation never clears the horizon limit at that hour.
+        """
+        ra, dec = self._constellation_center(name)
+        best: tuple[int, float] | None = None
+        for month in range(1, 13):
+            moment = datetime(year, month, 15, local_hour, 0, tzinfo=tz)
+            _, alt = self.altaz(ra, dec, moment, lat, lon)
+            if best is None or alt > best[1]:
+                best = (month, alt)
+        if best is None or best[1] <= self.config.min_altitude:
+            return None
+        return best
+
     # ------------------------------------------------------------- stars
     def get_all_stars(self, time_utc: datetime, lat: float, lon: float) -> list[StarPosition]:
         """Every catalog star with its apparent position (above or below horizon)."""
