@@ -245,73 +245,117 @@ class ConstellationMatcher:
     def match_template(
         self, points: Mapping[int, Point], template: ConstellationTemplate
     ) -> _Candidate | None:
-        """Best mapping of ``points`` onto one template, dropping few outliers."""
+        """Best mapping of ``points`` onto one template (outliers allowed)."""
         cfg = self.config
         ids = sorted(points)
-        for drop in range(cfg.max_outliers + 1):
-            keep = len(ids) - drop
-            if keep < cfg.min_matched:
-                break
-            if keep > template.size:
+        best: _Candidate | None = None
+        for mapping in self._hypotheses(points, ids, template):
+            if len(ids) - len(mapping) > cfg.max_outliers:
                 continue
-            best: _Candidate | None = None
-            for removed in itertools.combinations(ids, drop):
-                subset = [i for i in ids if i not in removed]
-                candidate = self._match_subset(points, subset, template)
-                if candidate and (best is None or candidate.fit_error < best.fit_error):
-                    best = candidate
-            if best is not None:
-                return best
-        return None
+            if not self._isomorphic(points, mapping, template):
+                continue
+            candidate = self._verify(points, mapping, template)
+            if candidate is None:
+                continue
+            if best is None or (-len(candidate.mapping), candidate.fit_error) < (
+                -len(best.mapping), best.fit_error
+            ):
+                best = candidate
+            if len(best.mapping) == min(len(ids), template.size) and best.fit_error < 1e-3:
+                break  # cannot do better
+        return best
 
-    def _match_subset(
+    def _hypotheses(
         self,
         points: Mapping[int, Point],
-        subset: Sequence[int],
+        ids: Sequence[int],
         template: ConstellationTemplate,
-    ) -> _Candidate | None:
-        cfg = self.config
-        obs = np.array([points[i] for i in subset], dtype=float)
-        obs_graph = _distance_graph(obs, list(subset), cfg.edge_threshold)
-        if obs_graph.number_of_edges() == 0:
-            return None
+    ) -> Iterable[dict[int, int]]:
+        """Candidate mappings from anchor-pair similarity hypotheses.
 
-        tmpl_dist = pairwise_distances(template.plane)
-        tmpl_graph = _distance_graph(template.plane, list(range(template.size)), None)
+        Fixing observed pair ``(a, b)`` onto template pair ``(p, q)`` fixes the
+        rotation, scale and translation. Every observed star is then mapped
+        into the template plane and assigned to the nearest template star
+        within tolerance. Vectorised over all template pairs at once (points
+        are handled as complex numbers). Yields unique mappings with at least
+        ``min_matched`` inliers, most inliers first per anchor pair.
+        """
+        cfg = self.config
+        z = np.array([complex(*points[i]) for i in ids])
+        w = template.plane[:, 0] + 1j * template.plane[:, 1]
         tolerance = cfg.distance_tolerance * template.extent
 
-        # Anchor pair: the longest observed edge.
-        a, b, d_ab = max(
-            ((u, v, data["d"]) for u, v, data in obs_graph.edges(data=True)),
-            key=lambda e: e[2],
+        pq = np.array(list(itertools.permutations(range(template.size), 2)))
+        wp, wq = w[pq[:, 0]], w[pq[:, 1]]
+
+        dist = np.abs(z[:, None] - z[None, :])
+        pairs = sorted(
+            itertools.combinations(range(len(ids)), 2), key=lambda ij: -dist[ij]
         )
-        if d_ab <= 0:
-            return None
+        seen: set[frozenset[tuple[int, int]]] = set()
+        for a, b in pairs:
+            if dist[a, b] == 0:
+                continue
+            # Template -> image:  z = A w + B   =>   image -> template: w = (z - B) / A
+            scale_rot = (z[b] - z[a]) / (wq - wp)  # (K,)
+            offset = z[a] - scale_rot * wp
+            mapped = (z[None, :] - offset[:, None]) / scale_rot[:, None]  # (K, n)
+            gaps = np.abs(mapped[:, :, None] - w[None, None, :])  # (K, n, m)
+            nearest = gaps.argmin(axis=2)
+            near_ok = gaps.min(axis=2) <= tolerance
+            counts = near_ok.sum(axis=1)
+            for k in np.argsort(-counts, kind="stable"):
+                if counts[k] < cfg.min_matched:
+                    break
+                # One-to-one: if several observed stars land on the same template
+                # star, keep the closest and treat the others as outliers.
+                claims: dict[int, tuple[float, int]] = {}
+                for i in np.flatnonzero(near_ok[k]):
+                    slot, gap = int(nearest[k, i]), float(gaps[k, i, nearest[k, i]])
+                    if slot not in claims or gap < claims[slot][0]:
+                        claims[slot] = (gap, ids[int(i)])
+                if len(claims) < cfg.min_matched:
+                    continue
+                mapping = {obs_id: slot for slot, (_, obs_id) in claims.items()}
+                key = frozenset(mapping.items())
+                if key in seen:
+                    continue
+                seen.add(key)
+                yield mapping
 
-        best: _Candidate | None = None
-        for p, q in itertools.permutations(range(template.size), 2):
-            scale = tmpl_dist[p, q] / d_ab
-            for node, role in ((a, "A"), (b, "B")):
-                obs_graph.nodes[node]["role"] = role
-            for node in tmpl_graph.nodes:
-                tmpl_graph.nodes[node]["role"] = "A" if node == p else "B" if node == q else None
-            for node in obs_graph.nodes:
-                obs_graph.nodes[node].setdefault("role", None)
+    def _isomorphic(
+        self,
+        points: Mapping[int, Point],
+        mapping: Mapping[int, int],
+        template: ConstellationTemplate,
+    ) -> bool:
+        """Confirm the mapping is a distance-preserving subgraph monomorphism.
 
-            matcher = GraphMatcher(
-                tmpl_graph,
-                obs_graph,
-                node_match=lambda n1, n2: n1.get("role") == n2.get("role"),
-                edge_match=lambda e1, e2, s=scale: abs(e1["d"] - s * e2["d"]) <= tolerance,
-            )
-            for tmpl_to_obs in matcher.subgraph_monomorphisms_iter():
-                mapping = {obs_id: t_idx for t_idx, obs_id in tmpl_to_obs.items()}
-                candidate = self._verify(points, mapping, template)
-                if candidate and (best is None or candidate.fit_error < best.fit_error):
-                    best = candidate
-            for node in obs_graph.nodes:
-                obs_graph.nodes[node]["role"] = None
-        return best
+        Runs :class:`GraphMatcher` with each observed star restricted to its
+        hypothesised template star, checking every observed edge against the
+        template edge lengths under the least-squares scale.
+        """
+        obs_ids = sorted(mapping)
+        obs = np.array([points[i] for i in obs_ids], dtype=float)
+        src = template.plane[[mapping[i] for i in obs_ids]]
+        try:
+            scale = 1.0 / fit_similarity(src, obs).scale
+        except ValueError:
+            return False
+        obs_graph = _distance_graph(obs, obs_ids, self.config.edge_threshold)
+        for node in obs_graph.nodes:
+            obs_graph.nodes[node]["slot"] = mapping[node]
+        tmpl_graph = _distance_graph(template.plane, list(range(template.size)), None)
+        for node in tmpl_graph.nodes:
+            tmpl_graph.nodes[node]["slot"] = node
+        tolerance = self.config.distance_tolerance * template.extent
+        matcher = GraphMatcher(
+            tmpl_graph,
+            obs_graph,
+            node_match=lambda n1, n2: n1["slot"] == n2["slot"],
+            edge_match=lambda e1, e2: abs(e1["d"] - scale * e2["d"]) <= tolerance,
+        )
+        return matcher.subgraph_is_monomorphic()
 
     def _verify(
         self,
