@@ -250,6 +250,19 @@ class SkyWorldModel:
         alt, az, _ = apparent.altaz()
         return [(float(a), float(h)) for a, h in zip(az.degrees, alt.degrees)]
 
+    def sun_altitude(self, time_utc: datetime, lat: float, lon: float) -> float:
+        """Apparent altitude of the Sun in degrees (negative = below horizon)."""
+        observer = self._observer(lat, lon)
+        apparent = observer.at(self._time(time_utc)).observe(self._eph["sun"]).apparent()
+        return float(apparent.altaz()[0].degrees)
+
+    def sky_darkness(self, time_utc: datetime, lat: float, lon: float) -> str:
+        """``"day"``, ``"twilight"`` (Sun 0 to -12°) or ``"night"`` (below -12°)."""
+        sun = self.sun_altitude(time_utc, lat, lon)
+        if sun > -0.833:  # upper limb on the horizon, with refraction
+            return "day"
+        return "twilight" if sun > -12.0 else "night"
+
     def best_viewing_month(
         self,
         name: str,
