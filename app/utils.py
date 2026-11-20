@@ -183,9 +183,18 @@ def screen_positions(
 
 
 def downscale(frame: Image, max_width: int = 960) -> tuple[Image, float]:
-    """Shrink wide frames for speed; returns the frame and the scale applied."""
+    """Shrink wide frames for speed; returns the frame and the scale applied.
+
+    Stars are only a few pixels wide, so plain area averaging would blend
+    them with the dark sky and push their peaks below the detection
+    threshold. A max filter sized to the reduction factor runs first, so each
+    output pixel keeps the brightest value of the pixels it replaces.
+    """
     if frame.shape[1] <= max_width:
         return frame, 1.0
     scale = max_width / frame.shape[1]
     size = (max_width, int(round(frame.shape[0] * scale)))
+    k = max(1, int(np.ceil(1.0 / scale)))
+    if k > 1:
+        frame = cv2.dilate(frame, np.ones((k, k), dtype=np.uint8))
     return cv2.resize(frame, size, interpolation=cv2.INTER_AREA), scale
