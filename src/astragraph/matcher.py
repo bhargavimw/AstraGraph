@@ -5,19 +5,19 @@ Algorithm (:meth:`ConstellationMatcher.match`):
 a) Build a graph from the observed cluster: nodes are stars, edges connect
    pairs closer than ``edge_threshold`` pixels (all pairs when unset), each
    edge carrying its length ``d``.
-b) Normalise for rotation and scale. Lengths alone are rotation-invariant;
-   scale is fixed by hypothesis: the two farthest observed stars ``(a, b)``
-   are assumed to be some template pair ``(p, q)``, giving the scale factor
-   ``s = d_template(p, q) / d_observed(a, b)``. This works for partial views,
-   unlike normalising by the observed extent, which changes when stars are
-   hidden.
-c) For each constellation and each scale hypothesis, test subgraph
-   monomorphism with :class:`networkx.algorithms.isomorphism.GraphMatcher`:
-   every observed edge must map to a template edge with
-   ``|d_template - s * d_observed| <= tolerance``.
-d) Each candidate mapping is verified with a least-squares similarity fit
-   (rotation + scale + translation, no reflection). This rejects mirror-image
-   matches, which have identical edge lengths but are not the real shape.
+b) Normalise for rotation and scale by hypothesis. Assuming observed pair
+   ``(a, b)`` is template pair ``(p, q)`` fixes rotation, scale and
+   translation; every other observed star is mapped into the template plane
+   and assigned to the nearest template star within tolerance. This is
+   vectorised over all template pairs. Unlike normalising by the observed
+   extent, it still works when stars are hidden.
+c) Each candidate mapping is confirmed as a subgraph monomorphism with
+   :class:`networkx.algorithms.isomorphism.GraphMatcher`: every observed edge
+   must map onto a template edge with ``|d_template - s * d_observed| <=
+   tolerance``.
+d) A least-squares similarity fit (rotation + scale + translation, no
+   reflection) must leave a small residual. This rejects mirror images,
+   which have identical edge lengths but the wrong handedness.
 e) The best mapping (most matched stars, then lowest fit error) is returned
    with ``confidence = matched_nodes / total_nodes``.
 
