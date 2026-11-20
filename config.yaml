@@ -1,6 +1,6 @@
 paths:
   constellation_data: data/constellations.json
-  visualization_output: output/constellations.png
+  visualization_output: outputs/constellations.png
 
 database:
   name: AstraGraph
