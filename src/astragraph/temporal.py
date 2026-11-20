@@ -135,6 +135,23 @@ def is_linear_trajectory(
     return len(points) >= min_points and linear_fit_residual(points) <= tolerance
 
 
+def steady_speed(points: Sequence[Point], frame_indices: Sequence[int]) -> float:
+    """Median per-frame speed along a path.
+
+    Unlike the mean speed, the median ignores a single jump (a star nudged by
+    hand shake), so only objects that move *every* frame score highly.
+    """
+    if len(points) < 2:
+        return 0.0
+    speeds = []
+    for (x0, y0), (x1, y1), f0, f1 in zip(
+        points, points[1:], frame_indices, frame_indices[1:]
+    ):
+        if f1 > f0:
+            speeds.append(math.hypot(x1 - x0, y1 - y0) / (f1 - f0))
+    return float(np.median(speeds)) if speeds else 0.0
+
+
 @dataclass(frozen=True)
 class GraphDiff:
     """Change between two consecutive scene graphs."""
@@ -331,9 +348,12 @@ class TemporalGraphBuilder:
         events: list[Event] = []
 
         if not state.satellite:
-            rel_traj = self.relative_trajectory(track)
+            # Recent window only: a satellite moves steadily, frame after frame.
+            window = cfg.min_trajectory_points
+            rel_traj = self.relative_trajectory(track)[-window:]
+            frames = track.frame_indices[-window:]
             vx, vy = self.sky_velocity(track)
-            speed = math.hypot(vx, vy)
+            speed = steady_speed(rel_traj, frames)
             linear = is_linear_trajectory(
                 rel_traj, tolerance=cfg.linear_tolerance,
                 min_points=cfg.min_trajectory_points,
