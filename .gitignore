@@ -5,6 +5,8 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 output/
+outputs/
 *.egg-info/
 build/
 dist/
+docs/decisions.md
