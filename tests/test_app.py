@@ -184,3 +184,65 @@ def test_learn_mode_shows_position_and_best_time() -> None:
     app.selectbox(key="learn_name").set_value("Scorpius").run()
     assert not app.exception
     assert "9 pm in" in " ".join(m.value for m in app.markdown)
+
+
+def _button(app: AppTest, label: str):
+    return next(b for b in app.button if label in b.label)
+
+
+def test_academy_quiz_dropdown_flow_scores_answer() -> None:
+    app = run_app("Academy")
+    assert not app.exception and not app.error
+    assert any("AstroAcademy" in h.value for h in app.header)
+    app.selectbox(key="quiz_name").set_value("Lyra").run()
+
+    # Draw one correct Lyra line and one wrong one with the dropdown fallback.
+    for a, b in (("Vega", "Zeta Lyrae"), ("Vega", "Sulafat")):
+        app.selectbox(key="quiz_from").set_value(a)
+        app.selectbox(key="quiz_to").set_value(b)
+        _button(app, "Connect").click().run()
+    assert app.metric[0].value == "2"
+
+    _button(app, "Submit").click().run()
+    assert not app.exception
+    warnings = " ".join(w.value for w in app.warning)
+    assert "Score: **12%**" in warnings  # 1 right / (7 correct + 1 extra) = 12.5%
+    assert "1 correct, 6 missing, 1 extra" in warnings
+
+
+def test_academy_undo_and_clear() -> None:
+    app = run_app("Academy")
+    app.selectbox(key="quiz_name").set_value("Cassiopeia").run()
+    app.selectbox(key="quiz_from").set_value("Caph")
+    app.selectbox(key="quiz_to").set_value("Schedar")
+    _button(app, "Connect").click().run()
+    assert app.metric[0].value == "1"
+    _button(app, "Undo").click().run()
+    assert app.metric[0].value == "0"
+    _button(app, "Connect").click().run()
+    _button(app, "Clear").click().run()
+    assert app.metric[0].value == "0"
+
+
+def test_academy_perfect_quiz_celebrates() -> None:
+    from astragraph.academy import normalize_edges
+
+    database = ConstellationDB.from_config("config.yaml")
+    database.load()
+    app = run_app("Academy")
+    app.selectbox(key="quiz_name").set_value("Cassiopeia").run()
+    for a, b in normalize_edges(database["Cassiopeia"].edges):
+        app.selectbox(key="quiz_from").set_value(a)
+        app.selectbox(key="quiz_to").set_value(b)
+        _button(app, "Connect").click().run()
+    _button(app, "Submit").click().run()
+    assert any("Perfect" in s.value for s in app.success)
+
+
+def test_academy_info_tab_shows_card() -> None:
+    app = run_app("Academy")
+    app.selectbox(key="info_name").set_value("Scorpius").run()
+    assert not app.exception and not app.error
+    text = " ".join(m.value for m in app.markdown)
+    assert "Mythology" in text and "Key stars" in text and "Antares" in text
+    assert any("Ophiuchus" in i.value for i in app.info)  # Scorpius fun fact
