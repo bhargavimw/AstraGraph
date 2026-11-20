@@ -1,0 +1,531 @@
+{
+  "metadata": {
+    "epoch": "J2000.0",
+    "reference_frame": "ICRS",
+    "ra_units": "degrees",
+    "dec_units": "degrees",
+    "magnitude_system": "V",
+    "notes": "Coordinates are decimal degrees (J2000.0). RA is in [0, 360), Dec in [-90, 90]. Lines follow the traditional naked-eye stick figures."
+  },
+  "constellations": {
+    "Orion": {
+      "abbreviation": "Ori",
+      "stars": [
+        {
+          "name": "Betelgeuse",
+          "designation": "Alpha Orionis",
+          "ra": 88.7929,
+          "dec": 7.4071,
+          "magnitude": 0.5
+        },
+        {
+          "name": "Rigel",
+          "designation": "Beta Orionis",
+          "ra": 78.6345,
+          "dec": -8.2016,
+          "magnitude": 0.13
+        },
+        {
+          "name": "Bellatrix",
+          "designation": "Gamma Orionis",
+          "ra": 81.2828,
+          "dec": 6.3497,
+          "magnitude": 1.64
+        },
+        {
+          "name": "Mintaka",
+          "designation": "Delta Orionis",
+          "ra": 83.0017,
+          "dec": -0.2991,
+          "magnitude": 2.23
+        },
+        {
+          "name": "Alnilam",
+          "designation": "Epsilon Orionis",
+          "ra": 84.0534,
+          "dec": -1.2019,
+          "magnitude": 1.69
+        },
+        {
+          "name": "Alnitak",
+          "designation": "Zeta Orionis",
+          "ra": 85.1897,
+          "dec": -0.9426,
+          "magnitude": 1.77
+        },
+        {
+          "name": "Saiph",
+          "designation": "Kappa Orionis",
+          "ra": 86.9392,
+          "dec": -9.6696,
+          "magnitude": 2.06
+        },
+        {
+          "name": "Meissa",
+          "designation": "Lambda Orionis",
+          "ra": 83.7845,
+          "dec": 9.9342,
+          "magnitude": 3.39
+        }
+      ],
+      "lines": [
+        ["Betelgeuse", "Meissa"],
+        ["Meissa", "Bellatrix"],
+        ["Betelgeuse", "Bellatrix"],
+        ["Bellatrix", "Mintaka"],
+        ["Mintaka", "Alnilam"],
+        ["Alnilam", "Alnitak"],
+        ["Betelgeuse", "Alnitak"],
+        ["Mintaka", "Rigel"],
+        ["Alnitak", "Saiph"]
+      ]
+    },
+    "Ursa Major": {
+      "abbreviation": "UMa",
+      "stars": [
+        {
+          "name": "Dubhe",
+          "designation": "Alpha Ursae Majoris",
+          "ra": 165.932,
+          "dec": 61.751,
+          "magnitude": 1.79
+        },
+        {
+          "name": "Merak",
+          "designation": "Beta Ursae Majoris",
+          "ra": 165.4603,
+          "dec": 56.3826,
+          "magnitude": 2.37
+        },
+        {
+          "name": "Phecda",
+          "designation": "Gamma Ursae Majoris",
+          "ra": 178.4577,
+          "dec": 53.6948,
+          "magnitude": 2.44
+        },
+        {
+          "name": "Megrez",
+          "designation": "Delta Ursae Majoris",
+          "ra": 183.8565,
+          "dec": 57.0326,
+          "magnitude": 3.32
+        },
+        {
+          "name": "Alioth",
+          "designation": "Epsilon Ursae Majoris",
+          "ra": 193.5073,
+          "dec": 55.9598,
+          "magnitude": 1.76
+        },
+        {
+          "name": "Mizar",
+          "designation": "Zeta Ursae Majoris",
+          "ra": 200.9814,
+          "dec": 54.9254,
+          "magnitude": 2.23
+        },
+        {
+          "name": "Alkaid",
+          "designation": "Eta Ursae Majoris",
+          "ra": 206.8852,
+          "dec": 49.3133,
+          "magnitude": 1.86
+        }
+      ],
+      "lines": [
+        ["Dubhe", "Merak"],
+        ["Merak", "Phecda"],
+        ["Phecda", "Megrez"],
+        ["Megrez", "Dubhe"],
+        ["Megrez", "Alioth"],
+        ["Alioth", "Mizar"],
+        ["Mizar", "Alkaid"]
+      ]
+    },
+    "Ursa Minor": {
+      "abbreviation": "UMi",
+      "stars": [
+        {
+          "name": "Polaris",
+          "designation": "Alpha Ursae Minoris",
+          "ra": 37.9546,
+          "dec": 89.2641,
+          "magnitude": 1.98
+        },
+        {
+          "name": "Yildun",
+          "designation": "Delta Ursae Minoris",
+          "ra": 263.0539,
+          "dec": 86.5864,
+          "magnitude": 4.35
+        },
+        {
+          "name": "Epsilon Ursae Minoris",
+          "designation": "Epsilon Ursae Minoris",
+          "ra": 251.4927,
+          "dec": 82.0373,
+          "magnitude": 4.21
+        },
+        {
+          "name": "Zeta Ursae Minoris",
+          "designation": "Zeta Ursae Minoris",
+          "ra": 236.0147,
+          "dec": 77.7945,
+          "magnitude": 4.32
+        },
+        {
+          "name": "Kochab",
+          "designation": "Beta Ursae Minoris",
+          "ra": 222.6764,
+          "dec": 74.1555,
+          "magnitude": 2.08
+        },
+        {
+          "name": "Pherkad",
+          "designation": "Gamma Ursae Minoris",
+          "ra": 230.1822,
+          "dec": 71.834,
+          "magnitude": 3.0
+        },
+        {
+          "name": "Eta Ursae Minoris",
+          "designation": "Eta Ursae Minoris",
+          "ra": 244.3761,
+          "dec": 75.7553,
+          "magnitude": 4.95
+        }
+      ],
+      "lines": [
+        ["Polaris", "Yildun"],
+        ["Yildun", "Epsilon Ursae Minoris"],
+        ["Epsilon Ursae Minoris", "Zeta Ursae Minoris"],
+        ["Zeta Ursae Minoris", "Kochab"],
+        ["Zeta Ursae Minoris", "Eta Ursae Minoris"],
+        ["Eta Ursae Minoris", "Pherkad"],
+        ["Pherkad", "Kochab"]
+      ]
+    },
+    "Cassiopeia": {
+      "abbreviation": "Cas",
+      "stars": [
+        {
+          "name": "Caph",
+          "designation": "Beta Cassiopeiae",
+          "ra": 2.2945,
+          "dec": 59.1498,
+          "magnitude": 2.28
+        },
+        {
+          "name": "Schedar",
+          "designation": "Alpha Cassiopeiae",
+          "ra": 10.1268,
+          "dec": 56.5373,
+          "magnitude": 2.24
+        },
+        {
+          "name": "Gamma Cassiopeiae",
+          "designation": "Gamma Cassiopeiae",
+          "ra": 14.1772,
+          "dec": 60.7167,
+          "magnitude": 2.15
+        },
+        {
+          "name": "Ruchbah",
+          "designation": "Delta Cassiopeiae",
+          "ra": 21.454,
+          "dec": 60.2353,
+          "magnitude": 2.68
+        },
+        {
+          "name": "Segin",
+          "designation": "Epsilon Cassiopeiae",
+          "ra": 28.5989,
+          "dec": 63.6701,
+          "magnitude": 3.38
+        }
+      ],
+      "lines": [
+        ["Caph", "Schedar"],
+        ["Schedar", "Gamma Cassiopeiae"],
+        ["Gamma Cassiopeiae", "Ruchbah"],
+        ["Ruchbah", "Segin"]
+      ]
+    },
+    "Leo": {
+      "abbreviation": "Leo",
+      "stars": [
+        {
+          "name": "Regulus",
+          "designation": "Alpha Leonis",
+          "ra": 152.093,
+          "dec": 11.9672,
+          "magnitude": 1.35
+        },
+        {
+          "name": "Denebola",
+          "designation": "Beta Leonis",
+          "ra": 177.2649,
+          "dec": 14.5721,
+          "magnitude": 2.14
+        },
+        {
+          "name": "Algieba",
+          "designation": "Gamma Leonis",
+          "ra": 154.9931,
+          "dec": 19.8415,
+          "magnitude": 2.08
+        },
+        {
+          "name": "Zosma",
+          "designation": "Delta Leonis",
+          "ra": 168.5271,
+          "dec": 20.5238,
+          "magnitude": 2.56
+        },
+        {
+          "name": "Epsilon Leonis",
+          "designation": "Epsilon Leonis",
+          "ra": 146.4628,
+          "dec": 23.7743,
+          "magnitude": 2.98
+        },
+        {
+          "name": "Mu Leonis",
+          "designation": "Mu Leonis",
+          "ra": 148.1909,
+          "dec": 26.007,
+          "magnitude": 3.88
+        },
+        {
+          "name": "Zeta Leonis",
+          "designation": "Zeta Leonis",
+          "ra": 154.1726,
+          "dec": 23.4173,
+          "magnitude": 3.43
+        },
+        {
+          "name": "Eta Leonis",
+          "designation": "Eta Leonis",
+          "ra": 151.8331,
+          "dec": 16.7627,
+          "magnitude": 3.48
+        },
+        {
+          "name": "Theta Leonis",
+          "designation": "Theta Leonis",
+          "ra": 168.56,
+          "dec": 15.4296,
+          "magnitude": 3.33
+        }
+      ],
+      "lines": [
+        ["Epsilon Leonis", "Mu Leonis"],
+        ["Mu Leonis", "Zeta Leonis"],
+        ["Zeta Leonis", "Algieba"],
+        ["Algieba", "Eta Leonis"],
+        ["Eta Leonis", "Regulus"],
+        ["Algieba", "Zosma"],
+        ["Zosma", "Denebola"],
+        ["Regulus", "Theta Leonis"],
+        ["Theta Leonis", "Denebola"]
+      ]
+    },
+    "Scorpius": {
+      "abbreviation": "Sco",
+      "stars": [
+        {
+          "name": "Antares",
+          "designation": "Alpha Scorpii",
+          "ra": 247.3519,
+          "dec": -26.432,
+          "magnitude": 1.06
+        },
+        {
+          "name": "Shaula",
+          "designation": "Lambda Scorpii",
+          "ra": 263.4022,
+          "dec": -37.1038,
+          "magnitude": 1.62
+        },
+        {
+          "name": "Sargas",
+          "designation": "Theta Scorpii",
+          "ra": 264.3297,
+          "dec": -42.9978,
+          "magnitude": 1.86
+        },
+        {
+          "name": "Dschubba",
+          "designation": "Delta Scorpii",
+          "ra": 240.0834,
+          "dec": -22.6217,
+          "magnitude": 2.32
+        },
+        {
+          "name": "Acrab",
+          "designation": "Beta Scorpii",
+          "ra": 241.3593,
+          "dec": -19.8055,
+          "magnitude": 2.62
+        },
+        {
+          "name": "Pi Scorpii",
+          "designation": "Pi Scorpii",
+          "ra": 239.713,
+          "dec": -26.1141,
+          "magnitude": 2.89
+        },
+        {
+          "name": "Epsilon Scorpii",
+          "designation": "Epsilon Scorpii",
+          "ra": 252.5425,
+          "dec": -34.2933,
+          "magnitude": 2.29
+        },
+        {
+          "name": "Kappa Scorpii",
+          "designation": "Kappa Scorpii",
+          "ra": 265.622,
+          "dec": -39.03,
+          "magnitude": 2.39
+        },
+        {
+          "name": "Lesath",
+          "designation": "Upsilon Scorpii",
+          "ra": 262.691,
+          "dec": -37.2958,
+          "magnitude": 2.69
+        }
+      ],
+      "lines": [
+        ["Acrab", "Dschubba"],
+        ["Dschubba", "Pi Scorpii"],
+        ["Dschubba", "Antares"],
+        ["Antares", "Epsilon Scorpii"],
+        ["Epsilon Scorpii", "Sargas"],
+        ["Sargas", "Kappa Scorpii"],
+        ["Kappa Scorpii", "Shaula"],
+        ["Shaula", "Lesath"]
+      ]
+    },
+    "Cygnus": {
+      "abbreviation": "Cyg",
+      "stars": [
+        {
+          "name": "Deneb",
+          "designation": "Alpha Cygni",
+          "ra": 310.358,
+          "dec": 45.2803,
+          "magnitude": 1.25
+        },
+        {
+          "name": "Sadr",
+          "designation": "Gamma Cygni",
+          "ra": 305.5571,
+          "dec": 40.2567,
+          "magnitude": 2.23
+        },
+        {
+          "name": "Gienah",
+          "designation": "Epsilon Cygni",
+          "ra": 311.5528,
+          "dec": 33.9703,
+          "magnitude": 2.48
+        },
+        {
+          "name": "Fawaris",
+          "designation": "Delta Cygni",
+          "ra": 296.2437,
+          "dec": 45.1308,
+          "magnitude": 2.86
+        },
+        {
+          "name": "Albireo",
+          "designation": "Beta Cygni",
+          "ra": 292.6804,
+          "dec": 27.9597,
+          "magnitude": 3.05
+        },
+        {
+          "name": "Zeta Cygni",
+          "designation": "Zeta Cygni",
+          "ra": 318.2341,
+          "dec": 30.2269,
+          "magnitude": 3.2
+        },
+        {
+          "name": "Iota Cygni",
+          "designation": "Iota Cygni",
+          "ra": 292.4265,
+          "dec": 51.7298,
+          "magnitude": 3.79
+        }
+      ],
+      "lines": [
+        ["Deneb", "Sadr"],
+        ["Sadr", "Albireo"],
+        ["Sadr", "Gienah"],
+        ["Gienah", "Zeta Cygni"],
+        ["Sadr", "Fawaris"],
+        ["Fawaris", "Iota Cygni"]
+      ]
+    },
+    "Lyra": {
+      "abbreviation": "Lyr",
+      "stars": [
+        {
+          "name": "Vega",
+          "designation": "Alpha Lyrae",
+          "ra": 279.2347,
+          "dec": 38.7837,
+          "magnitude": 0.03
+        },
+        {
+          "name": "Sheliak",
+          "designation": "Beta Lyrae",
+          "ra": 282.52,
+          "dec": 33.3627,
+          "magnitude": 3.45
+        },
+        {
+          "name": "Sulafat",
+          "designation": "Gamma Lyrae",
+          "ra": 284.7359,
+          "dec": 32.6896,
+          "magnitude": 3.25
+        },
+        {
+          "name": "Delta Lyrae",
+          "designation": "Delta2 Lyrae",
+          "ra": 283.6262,
+          "dec": 36.8986,
+          "magnitude": 4.3
+        },
+        {
+          "name": "Zeta Lyrae",
+          "designation": "Zeta1 Lyrae",
+          "ra": 281.193,
+          "dec": 37.605,
+          "magnitude": 4.36
+        },
+        {
+          "name": "Epsilon Lyrae",
+          "designation": "Epsilon1 Lyrae",
+          "ra": 281.0848,
+          "dec": 39.67,
+          "magnitude": 4.67
+        }
+      ],
+      "lines": [
+        ["Vega", "Zeta Lyrae"],
+        ["Vega", "Epsilon Lyrae"],
+        ["Epsilon Lyrae", "Zeta Lyrae"],
+        ["Zeta Lyrae", "Delta Lyrae"],
+        ["Delta Lyrae", "Sulafat"],
+        ["Sulafat", "Sheliak"],
+        ["Sheliak", "Zeta Lyrae"]
+      ]
+    }
+  }
+}
