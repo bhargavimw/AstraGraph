@@ -36,6 +36,8 @@ class Occlusion:
     def contains(self, az: float, alt: float) -> bool:
         if not self.alt_min <= alt <= self.alt_max:
             return False
+        if self.az_max - self.az_min >= 360.0:
+            return True  # spans every azimuth
         az, lo, hi = az % 360.0, self.az_min % 360.0, self.az_max % 360.0
         return lo <= az <= hi if lo <= hi else az >= lo or az <= hi
 
