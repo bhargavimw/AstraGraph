@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "description": "Mythology, key stars, viewing seasons and fun facts for the AstraGraph constellations.",
+    "seasons_note": "Seasons are for the Northern Hemisphere evening sky; they are reversed in the Southern Hemisphere.",
+    "distances_note": "Distances are approximate; for distant supergiants such as Deneb and Betelgeuse, published estimates differ widely."
+  },
+  "constellations": {
+    "Orion": {
+      "mythology": "Orion was a giant hunter in Greek myth who boasted that he could kill every animal on Earth. Gaia, the Earth goddess, sent a scorpion that stung him to death. The gods placed hunter and scorpion on opposite sides of the sky, so Orion sets in the west just as Scorpius rises in the east.",
+      "key_stars": [
+        {"name": "Betelgeuse", "fact": "A red supergiant so large that, placed where the Sun is, it would reach beyond the orbit of Mars. Its unexpected 'Great Dimming' in 2019–2020 was caused by a cloud of dust it ejected."},
+        {"name": "Rigel", "fact": "A blue-white supergiant roughly 860 light-years away and usually the brightest star in Orion, shining tens of thousands of times more brightly than the Sun."},
+        {"name": "Bellatrix", "fact": "Its name means 'female warrior'. A hot blue giant about 250 light-years away marking Orion's left shoulder."},
+        {"name": "Alnilam", "fact": "The middle star of Orion's Belt, a blue supergiant hundreds of thousands of times more luminous than the Sun. Like the other belt stars it is young and hot, roughly 1,200–2,000 light-years away depending on the estimate."},
+        {"name": "Saiph", "fact": "Marks Orion's right knee, roughly 650 light-years away. It is a very hot star, so much of its light is ultraviolet, which our eyes cannot see — making it look fainter than its true power."}
+      ],
+      "best_season": "Winter",
+      "fun_fact": "The fuzzy patch in Orion's sword is the Orion Nebula (M42), a stellar nursery about 1,350 light-years away where new stars are forming right now. It is visible to the naked eye from a dark site."
+    },
+    "Ursa Major": {
+      "mythology": "In Greek myth the nymph Callisto was turned into a bear, by Hera in jealousy or by Zeus to hide her. Years later her son Arcas, out hunting, nearly killed her; Zeus swept both into the sky as the Great Bear and the Little Bear.",
+      "key_stars": [
+        {"name": "Dubhe", "fact": "With Merak it forms the 'Pointers': follow the line from Merak through Dubhe about five times their separation to find Polaris, the North Star."},
+        {"name": "Merak", "fact": "The lower Pointer star, about 80 light-years away. It belongs to the Ursa Major Moving Group, a family of stars that formed together and still travel through space side by side."},
+        {"name": "Mizar", "fact": "Has a fainter companion, Alcor, visible to good eyes — a traditional eyesight test. Through a telescope Mizar itself splits in two, and each of those is a binary too."},
+        {"name": "Alioth", "fact": "The brightest star of the Big Dipper, about 83 light-years away."},
+        {"name": "Alkaid", "fact": "The star at the end of the Dipper's handle. It is a hot blue star about 100 light-years away and is not part of the moving group shared by the middle Dipper stars."}
+      ],
+      "best_season": "Spring",
+      "fun_fact": "The Big Dipper is an asterism, not a constellation: its seven stars are only part of Ursa Major. Five of them (Merak, Phecda, Megrez, Alioth and Mizar) really do travel together through space as the Ursa Major Moving Group."
+    },
+    "Ursa Minor": {
+      "mythology": "The Little Bear is usually identified with Arcas, son of Callisto, placed in the sky beside his mother. Another story says it honours Ida, one of the nymphs who cared for the infant Zeus on Crete.",
+      "key_stars": [
+        {"name": "Polaris", "fact": "The North Star, less than one degree from the north celestial pole, so it barely moves while the sky turns around it. It is a pulsating Cepheid variable and part of a multiple-star system about 430 light-years away."},
+        {"name": "Kochab", "fact": "An orange giant about 130 light-years away. With Pherkad it is called a 'Guardian of the Pole' because the pair circles Polaris all night."},
+        {"name": "Pherkad", "fact": "The second 'Guardian of the Pole', a white giant in the Little Dipper's bowl."}
+      ],
+      "best_season": "All year (circumpolar from most of the Northern Hemisphere)",
+      "fun_fact": "Polaris has not always been the North Star. Earth's axis slowly wobbles (precession), so around 1000 BCE Kochab was nearer the pole, and in about 12,000 years Vega will be the bright pole star."
+    },
+    "Cassiopeia": {
+      "mythology": "Cassiopeia was a vain queen of Aethiopia who boasted that she (or her daughter Andromeda) was more beautiful than the sea nymphs. As punishment, Poseidon sent a sea monster, and Cassiopeia was set in the sky on her throne, circling the pole and spending half the night upside down.",
+      "key_stars": [
+        {"name": "Schedar", "fact": "An orange giant about 230 light-years away and, by a small margin, usually the brightest star in Cassiopeia."},
+        {"name": "Caph", "fact": "A white star only about 55 light-years away that pulses slightly in brightness several times a day."},
+        {"name": "Gamma Cassiopeiae", "fact": "The centre of the 'W'. A hot, rapidly spinning star that throws off a disc of gas, making its brightness change unpredictably — the prototype of its class of variable stars."},
+        {"name": "Ruchbah", "fact": "An eclipsing binary: a companion star passes in front of it every 759 days, dimming it slightly."}
+      ],
+      "best_season": "Autumn",
+      "fun_fact": "In 1572 Tycho Brahe saw a 'new star' in Cassiopeia outshine Venus: a supernova. Another explosion there about 350 years ago left Cassiopeia A, the brightest radio source in the sky beyond our Solar System."
+    },
+    "Leo": {
+      "mythology": "Leo is the Nemean Lion, a beast whose golden hide no weapon could pierce. Slaying it was the first of the twelve labours of Heracles, who strangled the lion and afterwards wore its skin as armour.",
+      "key_stars": [
+        {"name": "Regulus", "fact": "About 79 light-years away, it spins so fast — once every 16 hours or so — that it is flattened at the poles. It sits almost exactly on the ecliptic, so the Moon regularly passes in front of it."},
+        {"name": "Denebola", "fact": "Its name means 'the lion's tail'. A white star only about 36 light-years away, surrounded by a disc of dust."},
+        {"name": "Algieba", "fact": "A beautiful pair of golden giant stars that a small telescope shows orbiting each other, about 130 light-years away."},
+        {"name": "Zosma", "fact": "Marks the lion's back, a white star about 58 light-years away."}
+      ],
+      "best_season": "Spring",
+      "fun_fact": "The Leonid meteor shower appears to come from Leo every November. It is debris from Comet Tempel–Tuttle, and in some years (such as 1833 and 1966) it has produced storms of thousands of meteors per hour."
+    },
+    "Scorpius": {
+      "mythology": "Scorpius is the scorpion sent by Gaia to kill the boastful hunter Orion. The two were placed on opposite sides of the sky, so the scorpion rises in the east as Orion sets in the west — they are never seen together.",
+      "key_stars": [
+        {"name": "Antares", "fact": "Its name means 'rival of Mars' because of its red colour. A red supergiant about 550 light-years away, hundreds of times wider than the Sun."},
+        {"name": "Shaula", "fact": "From the Arabic for 'the raised tail', it marks the scorpion's stinger together with nearby Lesath."},
+        {"name": "Sargas", "fact": "A yellow-white giant in the curve of the tail, often too far south to see well from northern countries."},
+        {"name": "Dschubba", "fact": "In the scorpion's head. It flared in brightness in 2000 as it shed a disc of gas and has varied ever since."}
+      ],
+      "best_season": "Summer",
+      "fun_fact": "The Sun spends only about a week in Scorpius each year (late November) and then passes through Ophiuchus, the 'thirteenth' constellation on the Sun's path that the traditional zodiac leaves out."
+    },
+    "Cygnus": {
+      "mythology": "Cygnus the Swan has several origin stories. In one, Zeus took the form of a swan to visit Leda, queen of Sparta. In another, Cycnus dived again and again into a river searching for his friend Phaethon and was turned into a swan.",
+      "key_stars": [
+        {"name": "Deneb", "fact": "One of the most luminous stars visible to the naked eye. Its distance is still debated — estimates range from about 1,500 to 2,600 light-years — so its true power is uncertain, but it is tens of thousands of times brighter than the Sun."},
+        {"name": "Albireo", "fact": "Marks the swan's head. A small telescope splits it into a golden star and a blue one, one of the most colourful doubles in the sky."},
+        {"name": "Sadr", "fact": "At the centre of the cross, a yellow-white supergiant surrounded by glowing clouds of gas."}
+      ],
+      "best_season": "Summer",
+      "fun_fact": "Cygnus is also called the Northern Cross. It contains Cygnus X-1, the first object widely accepted as a black hole, and 61 Cygni, the first star whose distance was measured (by Friedrich Bessel in 1838)."
+    },
+    "Lyra": {
+      "mythology": "Lyra is the lyre of Orpheus, the legendary musician whose songs could charm animals and even stones. After his death the lyre was placed among the stars.",
+      "key_stars": [
+        {"name": "Vega", "fact": "About 25 light-years away and the fifth-brightest star in the night sky. In 1850 it became the first star other than the Sun to be photographed."},
+        {"name": "Epsilon Lyrae", "fact": "The 'Double Double': sharp eyes see two stars, and a telescope splits each of those into two more."},
+        {"name": "Sheliak", "fact": "An eclipsing binary whose two stars are so close that gas flows from one to the other; its brightness changes over about 13 days."},
+        {"name": "Sulafat", "fact": "A blue-white giant. The Ring Nebula lies about halfway between Sulafat and Sheliak."}
+      ],
+      "best_season": "Summer",
+      "fun_fact": "Vega forms the Summer Triangle with Deneb in Cygnus and Altair in Aquila. Between Sheliak and Sulafat is the Ring Nebula (M57), the glowing shell of gas thrown off by a dying Sun-like star."
+    }
+  }
+}
