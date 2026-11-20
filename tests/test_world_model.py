@@ -255,3 +255,22 @@ def test_demo_script_lists_correct_visible_constellations(
     assert "Bootes" in rising and "Virgo" in rising  # spring stars rise before midnight
     assert "Orion (centre) rises 2024-01-15 15:49 EST" in out
     assert "Sky map now" in out
+
+
+def test_altaz_many_matches_single_calls(model: SkyWorldModel) -> None:
+    when = utc("2024-01-15T04:00:00")
+    ras, decs = [101.287215, 279.234735, 88.792939], [-16.716116, 38.783692, 7.407063]
+    many = model.altaz_many(ras, decs, when, *NYC)
+    for (az, alt), ra, dec in zip(many, ras, decs):
+        single = model.altaz(ra, dec, when, *NYC)
+        assert (az, alt) == pytest.approx(single, abs=1e-9)
+    assert model.altaz_many([], [], when, *NYC) == []
+
+
+def test_best_viewing_month(model: SkyWorldModel) -> None:
+    ny = ZoneInfo("America/New_York")
+    assert model.best_viewing_month("Orion", *NYC, tz=ny)[0] == 1  # winter
+    assert model.best_viewing_month("Leo", *NYC, tz=ny)[0] == 4  # spring
+    assert model.best_viewing_month("Cygnus", *NYC, tz=ny)[0] == 9  # late summer
+    sydney = ZoneInfo("Australia/Sydney")
+    assert model.best_viewing_month("Ursa Minor", -33.8688, 151.2093, tz=sydney) is None
