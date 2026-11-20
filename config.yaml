@@ -1,0 +1,14 @@
+paths:
+  constellation_data: data/constellations.json
+  visualization_output: output/constellations.png
+
+database:
+  name: AstraGraph
+
+visualization:
+  columns: 4
+  figure_width: 20
+  figure_height: 11
+  dpi: 160
+  annotate_stars: true
+  title: "AstraGraph Constellation Database"
