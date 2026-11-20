@@ -8,6 +8,7 @@ Modes (sidebar):
                    stream, an uploaded photo/video, or a built-in demo sky.
     Time Travel  – slide up to 12 hours either way and see the predicted sky.
     Learn        – constellation facts, current position and rise/set times.
+    Academy      – connect-the-dots quizzes and constellation info cards.
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ for path in (ROOT / "src", ROOT / "app"):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+from astragraph.academy import AstronomyAcademy, Quiz, QuizResult, normalize_edge  # noqa: E402
 from astragraph.constellation_db import ConstellationDB, load_config, resolve_path  # noqa: E402
 from astragraph.pipeline import FrameReport, PipelineConfig, SkyPipeline  # noqa: E402
 from astragraph.synthetic import demo_sky_clip  # noqa: E402
@@ -87,9 +89,10 @@ def sidebar(config: dict) -> tuple[str, float, float, ZoneInfo]:
     st.sidebar.title("✨ AstraGraph")
     st.sidebar.caption("Learn & explore the night sky")
     mode = st.sidebar.radio(
-        "Mode", ["Live Camera", "Time Travel", "Learn"],
+        "Mode", ["Live Camera", "Time Travel", "Learn", "Academy"],
         help="Live Camera finds constellations in images; Time Travel predicts "
-             "the sky; Learn explains each constellation.",
+             "the sky; Learn explains each constellation; Academy has quizzes "
+             "and constellation stories.",
     )
     section = config.get("world_model") or {}
     with st.sidebar.expander("📍 Your location", expanded=mode != "Live Camera"):
@@ -392,6 +395,52 @@ def time_travel(db: ConstellationDB, model: SkyWorldModel,
         st.dataframe(rows, hide_index=True, width="stretch")
 
 
+def show_sky_status(model: SkyWorldModel, name: str, lat: float, lon: float,
+                    tz: ZoneInfo) -> None:
+    """Best viewing month, current position and tonight's rise/set."""
+    now = datetime.now(timezone.utc)
+    try:
+        with st.spinner("Computing positions…"):
+            best = model.best_viewing_month(name, lat, lon, tz=tz)
+            az, alt = model.get_constellation_position(name, now, lat, lon)
+            rise, set_ = rise_then_set(
+                lambda d: model.get_constellation_rise_set(name, d, lat, lon, tz=tz),
+                now.astimezone(tz).date(),
+            )
+            darkness = model.sky_darkness(now, lat, lon)
+    except Exception as exc:
+        st.error(f"Could not compute positions for this location: {exc}")
+        return
+
+    st.subheader("Best time to view")
+    if best is None:
+        st.write(f"{name} never rises high enough to see well from this latitude.")
+    else:
+        st.write(f"Around **9 pm in {MONTHS[best[0] - 1]}**, when it reaches "
+                 f"about {best[1]:.0f}° above the horizon.")
+
+    st.subheader("Right now")
+    if darkness == "day":
+        st.caption("☀️ It is daytime here, so the sky is too bright to see stars.")
+    if alt > model.config.min_altitude:
+        st.success(f"{name} is currently visible at azimuth {az:.0f}° "
+                   f"({compass(az)}), altitude {alt:.0f}°.")
+    elif alt > 0:
+        st.warning(f"{name} is low on the horizon: azimuth {az:.0f}° "
+                   f"({compass(az)}), altitude {alt:.0f}°.")
+    else:
+        st.info(f"{name} is below the horizon right now (altitude {alt:.0f}°).")
+
+    st.subheader("Tonight")
+    if rise is None and set_ is None:
+        st.write("Does not rise or set today: "
+                 + ("it stays above the horizon all night."
+                    if alt > 0 else "it stays below the horizon."))
+    else:
+        st.write(f"🌄 Rises: **{fmt_time(rise, tz)}**")
+        st.write(f"🌇 Sets: **{fmt_time(set_, tz)}**")
+
+
 # -------------------------------------------------------------------- learn
 def learn(db: ConstellationDB, model: SkyWorldModel,
           lat: float, lon: float, tz: ZoneInfo) -> None:
@@ -399,7 +448,6 @@ def learn(db: ConstellationDB, model: SkyWorldModel,
     name = st.selectbox("Choose a constellation", db.list_constellations(),
                         index=db.list_constellations().index("Orion"), key="learn_name")
     graph = db[name]
-    now = datetime.now(timezone.utc)
 
     left, right = st.columns([3, 2])
     with left:
@@ -416,45 +464,219 @@ def learn(db: ConstellationDB, model: SkyWorldModel,
         )
         st.caption("Lower magnitude = brighter. Each step of 1 is ~2.5× in brightness.")
 
-        try:
-            best = model.best_viewing_month(name, lat, lon, tz=tz)
-            az, alt = model.get_constellation_position(name, now, lat, lon)
-            rise, set_ = rise_then_set(
-                lambda d: model.get_constellation_rise_set(name, d, lat, lon, tz=tz),
-                now.astimezone(tz).date(),
-            )
-        except Exception as exc:
-            st.error(f"Could not compute positions for this location: {exc}")
-            return
+        show_sky_status(model, name, lat, lon, tz)
 
-        st.subheader("Best time to view")
-        if best is None:
-            st.write(f"{name} never rises high enough to see well from this latitude.")
-        else:
-            st.write(f"Around **9 pm in {MONTHS[best[0] - 1]}**, when it reaches "
-                     f"about {best[1]:.0f}° above the horizon.")
 
-        st.subheader("Right now")
-        if model.sky_darkness(now, lat, lon) == "day":
-            st.caption("☀️ It is daytime here, so the sky is too bright to see stars.")
-        if alt > model.config.min_altitude:
-            st.success(f"{name} is currently visible at azimuth {az:.0f}° "
-                       f"({compass(az)}), altitude {alt:.0f}°.")
-        elif alt > 0:
-            st.warning(f"{name} is low on the horizon: azimuth {az:.0f}° "
-                       f"({compass(az)}), altitude {alt:.0f}°.")
-        else:
-            st.info(f"{name} is below the horizon right now "
-                    f"(altitude {alt:.0f}°).")
+# ------------------------------------------------------------------ academy
+QUIZ_COLORS = {"star": "#f5f8ff", "distractor": "#f5f8ff", "line": GOLD_HEX,
+               "pending": "#3cdcff", "correct": "#4cd964", "extra": "#ff5a5a",
+               "missing": "#ffbe28"}
 
-        st.subheader("Tonight")
-        if rise is None and set_ is None:
-            st.write("Does not rise or set today: "
-                     + ("it stays above the horizon all night."
-                        if alt > 0 else "it stays below the horizon."))
+
+@st.cache_resource
+def load_academy() -> AstronomyAcademy:
+    db, _, _ = load_resources()
+    return AstronomyAcademy(db)
+
+
+def quiz_figure(quiz: Quiz, pending: str | None, result: QuizResult | None):
+    """Plotly chart of the quiz: stars as clickable points, lines as drawn."""
+    import plotly.graph_objects as go
+
+    fig = go.Figure()
+    pos = {s.name: (s.x, s.y) for s in quiz.stars}
+
+    def add_lines(edges, color: str, dash: str = "solid", width: float = 3,
+                  label: str | None = None) -> None:
+        xs, ys = [], []
+        for a, b in sorted(edges):
+            xs += [pos[a][0], pos[b][0], None]
+            ys += [pos[a][1], pos[b][1], None]
+        if xs:
+            fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", hoverinfo="skip",
+                                     line=dict(color=color, width=width, dash=dash),
+                                     name=label or "", showlegend=label is not None))
+
+    if result is None:
+        add_lines(quiz.user_edges, QUIZ_COLORS["line"])
+    else:
+        add_lines(result.correct, QUIZ_COLORS["correct"], label="correct")
+        add_lines(result.extra, QUIZ_COLORS["extra"], label="not a line")
+        if not result.perfect:
+            add_lines(result.missing, QUIZ_COLORS["missing"], "dash", 2, label="missing")
+
+    stars = list(quiz.stars)
+    fig.add_trace(go.Scatter(
+        x=[s.x for s in stars], y=[s.y for s in stars], mode="markers+text",
+        text=[s.name for s in stars], textposition="top center",
+        textfont=dict(color="#c9d6f2", size=11),
+        customdata=[s.name for s in stars],
+        hovertemplate="%{customdata}<extra></extra>",
+        marker=dict(size=[max(8.0, 22 - 4.5 * s.magnitude) for s in stars],
+                    color=QUIZ_COLORS["star"], line=dict(width=0)),
+        showlegend=False,
+    ))
+    if pending:
+        x, y = pos[pending]
+        fig.add_trace(go.Scatter(x=[x], y=[y], mode="markers", hoverinfo="skip",
+                                 marker=dict(size=30, color="rgba(0,0,0,0)",
+                                             line=dict(color=QUIZ_COLORS["pending"], width=3)),
+                                 showlegend=False))
+    fig.update_layout(
+        paper_bgcolor=SKY_BG, plot_bgcolor=PANEL_BG, height=560,
+        margin=dict(l=10, r=10, t=10, b=10), dragmode=False, clickmode="event+select",
+        legend=dict(font=dict(color="#c9d6f2"), orientation="h", y=-0.02),
+        xaxis=dict(visible=False), yaxis=dict(visible=False, scaleanchor="x"),
+    )
+    return fig
+
+
+def _quiz_state(academy: AstronomyAcademy, name: str, distractors: int) -> dict:
+    """Session state for the current quiz; a new quiz when the settings change."""
+    key = (name, distractors)
+    state = st.session_state.get("quiz")
+    if state is None or state["key"] != key:
+        state = {"key": key, "quiz": academy.generate_quiz(name, distractors=distractors),
+                 "pending": None, "result": None, "nonce": 0, "history": []}
+        st.session_state["quiz"] = state
+    return state
+
+
+def _connect(state: dict, a: str, b: str) -> None:
+    if a == b:
+        return
+    added = state["quiz"].toggle_edge(a, b)
+    state["history"].append((a, b, added))
+    state["result"] = None
+
+
+def quiz_tab(academy: AstronomyAcademy) -> None:
+    names = academy.list_constellations()
+    col1, col2, col3 = st.columns([2, 2, 1])
+    name = col1.selectbox("Constellation", names, index=names.index("Orion"), key="quiz_name")
+    level = col2.radio("Difficulty", ["Easy", "Hard (3 extra stars)"], horizontal=True,
+                       key="quiz_level")
+    distractors = 0 if level == "Easy" else 3
+    state = _quiz_state(academy, name, distractors)
+    quiz: Quiz = state["quiz"]
+    if col3.button("🔄 New quiz", width="stretch"):
+        st.session_state.pop("quiz", None)
+        st.rerun()
+
+    st.markdown(f"### Draw **{name}**")
+    st.caption("Click a star, then another star, to draw a line between them. "
+               "Click the same pair again to remove it. East is on the left, as in the sky.")
+
+    event = st.plotly_chart(
+        quiz_figure(quiz, state["pending"], state["result"]),
+        on_select="rerun", selection_mode="points",
+        key=f"quiz_chart_{state['nonce']}", width="stretch",
+        config={"displayModeBar": False},
+    )
+    points = (event.get("selection", {}) or {}).get("points", []) if event else []
+    clicked = None
+    for point in points:
+        data = point.get("customdata")
+        if data:
+            clicked = data[0] if isinstance(data, (list, tuple)) else data
+    if clicked:
+        if state["pending"] is None:
+            state["pending"] = clicked
         else:
-            st.write(f"🌄 Rises: **{fmt_time(rise, tz)}**")
-            st.write(f"🌇 Sets: **{fmt_time(set_, tz)}**")
+            _connect(state, state["pending"], clicked)
+            state["pending"] = None
+        state["nonce"] += 1  # fresh chart so the next click registers
+        st.rerun()
+
+    with st.expander("Prefer dropdowns? Connect stars here"):
+        star_names = sorted(s.name for s in quiz.stars)
+        c1, c2, c3 = st.columns([2, 2, 1])
+        a = c1.selectbox("From", star_names, key="quiz_from")
+        b = c2.selectbox("To", star_names, index=min(1, len(star_names) - 1), key="quiz_to")
+        if c3.button("Connect", width="stretch", disabled=a == b):
+            _connect(state, a, b)
+            st.rerun()
+
+    b1, b2, b3, b4 = st.columns(4)
+    b1.metric("Lines drawn", len(quiz.user_edges))
+    if b2.button("↩ Undo", width="stretch", disabled=not state["history"]):
+        a, b, added = state["history"].pop()
+        if added == (normalize_edge(a, b) in quiz.user_edges):
+            quiz.toggle_edge(a, b)
+        state["result"] = None
+        st.rerun()
+    if b3.button("🧹 Clear", width="stretch", disabled=not quiz.user_edges):
+        quiz.user_edges.clear()
+        state.update(pending=None, result=None, history=[])
+        st.rerun()
+    if b4.button("✅ Submit", type="primary", width="stretch",
+                 disabled=not quiz.user_edges):
+        state["result"] = quiz.grade()
+        state["pending"] = None
+        st.rerun()
+
+    result: QuizResult | None = state["result"]
+    if result is not None:
+        if result.perfect:
+            st.success(f"🎉 Perfect! You drew {name} exactly — score {result.score:.0%}.")
+            st.balloons()
+        else:
+            st.warning(f"Score: **{result.score:.0%}** — {len(result.correct)} correct, "
+                       f"{len(result.missing)} missing, {len(result.extra)} extra.")
+            if result.same_shape:
+                st.info("Nice — your drawing has exactly the right *shape* (the graphs are "
+                        "isomorphic), but some lines connect different stars.")
+            st.caption("The chart now shows the correct answer: green lines are right, "
+                       "red ones are not part of the figure, dashed gold ones were missing.")
+
+
+def info_tab(academy: AstronomyAcademy, model: SkyWorldModel,
+             lat: float, lon: float, tz: ZoneInfo) -> None:
+    names = academy.list_constellations()
+    name = st.selectbox("Constellation", names, index=names.index("Orion"), key="info_name")
+    try:
+        info = academy.get_constellation_info(name)
+    except KeyError as exc:
+        st.error(str(exc))
+        return
+
+    left, right = st.columns([3, 2])
+    with left, st.container(border=True):
+        st.markdown(f"## {info['name']} "
+                    f"<span style='color:#8a97b8;font-size:0.6em'>{info['abbreviation']}</span>",
+                    unsafe_allow_html=True)
+        st.caption(f"{info['star_count']} stars · {info['line_count']} lines · "
+                   f"best season: {info['best_season']}")
+        st.markdown("#### 🏛️ Mythology")
+        st.write(info["mythology"])
+        st.markdown("#### ⭐ Key stars")
+        for star in info["key_stars"]:
+            details = [f"magnitude {star['magnitude']:.2f}"]
+            if star.get("distance_ly"):
+                details.append(f"~{star['distance_ly']:,} light-years")
+            st.markdown(f"**{star['name']}** "
+                        f"<span style='color:#8a97b8'>({', '.join(details)})</span>",
+                        unsafe_allow_html=True)
+            st.write(star["fact"])
+        st.markdown("#### 💡 Fun fact")
+        st.info(info["fun_fact"])
+    with right:
+        show_sky_status(model, name, lat, lon, tz)
+        st.caption(academy.metadata.get("seasons_note", ""))
+
+
+def academy_mode(model: SkyWorldModel, lat: float, lon: float, tz: ZoneInfo) -> None:
+    st.header("🎓 AstroAcademy")
+    try:
+        academy = load_academy()
+    except Exception as exc:
+        st.error(f"Could not load the Academy content: {exc}")
+        return
+    quiz, info = st.tabs(["🧩 Quiz: build a constellation", "📖 Constellation info"])
+    with quiz:
+        quiz_tab(academy)
+    with info:
+        info_tab(academy, model, lat, lon, tz)
 
 
 # --------------------------------------------------------------------- main
@@ -471,8 +693,10 @@ def main() -> None:
         live_camera(db, config)
     elif mode == "Time Travel":
         time_travel(db, model, lat, lon, tz)
-    else:
+    elif mode == "Learn":
         learn(db, model, lat, lon, tz)
+    else:
+        academy_mode(model, lat, lon, tz)
     st.sidebar.caption(f"Rendered in {clock.perf_counter() - started:.2f} s")
 
 
