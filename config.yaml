@@ -12,3 +12,36 @@ visualization:
   dpi: 160
   annotate_stars: true
   title: "AstraGraph Constellation Database"
+
+# --- Stage 2+3: detection, tracking, temporal events, reasoning -------------
+
+detector:
+  min_brightness: 180       # peak 8-bit intensity a star must reach
+  min_size: 3               # minimum source area in pixels (rejects hot pixels)
+  max_aspect_ratio: 2.0     # longer blobs are trails (aircraft, satellite streaks)
+  blur_kernel: 3            # Gaussian blur kernel (odd)
+
+tracking:
+  max_disappeared: 5        # occlusion grace period in frames
+  debounce_frames: 3        # frames an event must persist before it is emitted
+  max_distance: 15          # max pixels between predicted and detected position
+
+temporal:
+  cluster_distance: 250     # near(A, B) if closer than this many pixels
+  move_threshold: 5         # pixels of sky-relative drift that count as MOVES
+  linear_tolerance: 0.75    # max RMS deviation (px) from a straight line
+  min_trajectory_points: 6  # points needed before judging a trajectory
+
+reasoning:
+  satellite_velocity_threshold: 1.0   # pixels/frame relative to the star field
+  min_cluster_size: 4
+  match_confidence_threshold: 0.6     # below this an identification is a partial view
+  anomaly_brightness_threshold: 230   # bright + not in catalog => anomaly
+
+matcher:
+  distance_tolerance: 0.05  # edge-length tolerance, fraction of constellation size
+  fit_tolerance: 0.03       # max RMS fit residual, fraction of constellation size
+  max_outliers: 2           # unrelated stars allowed inside a matched cluster
+
+video:
+  fps: 30
