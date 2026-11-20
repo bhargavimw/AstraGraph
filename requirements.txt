@@ -7,4 +7,5 @@ skyfield>=1.49
 skyfield-data>=6.0
 streamlit>=1.50
 streamlit-webrtc>=0.47
+plotly>=5.20
 pytest>=8.0
