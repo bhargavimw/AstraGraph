@@ -27,7 +27,7 @@ tracking:
   max_distance: 15          # max pixels between predicted and detected position
 
 temporal:
-  cluster_distance: 250     # near(A, B) if closer than this many pixels
+  cluster_distance: 320     # near(A, B) if closer than this (px); depends on zoom
   move_threshold: 5         # pixels of sky-relative drift that count as MOVES
   linear_tolerance: 0.75    # max RMS deviation (px) from a straight line
   min_trajectory_points: 6  # points needed before judging a trajectory
@@ -39,8 +39,8 @@ reasoning:
   anomaly_brightness_threshold: 230   # bright + not in catalog => anomaly
 
 matcher:
-  distance_tolerance: 0.05  # edge-length tolerance, fraction of constellation size
-  fit_tolerance: 0.03       # max RMS fit residual, fraction of constellation size
+  distance_tolerance: 0.03  # edge-length tolerance, fraction of constellation size
+  fit_tolerance: 0.015      # max RMS fit residual, fraction of constellation size
   max_outliers: 2           # unrelated stars allowed inside a matched cluster
 
 video:
