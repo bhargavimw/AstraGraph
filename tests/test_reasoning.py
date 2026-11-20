@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 
 import numpy as np
 import pytest
@@ -280,3 +281,38 @@ def test_pipeline_identifies_constellation_and_satellite(db: ConstellationDB) ->
     assert len(report.anomalies) == 1
     planet_track = next(t for t in report.tracks if t.id == report.anomalies[0])
     assert planet_track.x == pytest.approx(560.0, abs=1.0)
+
+
+def test_pipeline_identifies_constellation_split_by_clustering(db: ConstellationDB) -> None:
+    # A tiny cluster distance splits Ursa Major into pieces; matching the
+    # whole scene as one group must still identify it.
+    base = PipelineConfig.from_file("config.yaml")
+    config = replace(base, temporal=replace(base.temporal, cluster_distance=120.0))
+    pipeline = SkyPipeline(db, config)
+    stars = constellation_stars(db["Ursa Major"], Similarity(24.0, -0.6, (480.0, 360.0)))
+    for k in range(5):
+        report = pipeline.process(render_star_field(stars, 960, 720, seed=k), k)
+    assert len(pipeline.temporal.clusters) > 1
+    assert [m.constellation for m in report.constellations] == ["Ursa Major"]
+
+
+def test_demo_script_identifies_constellation_and_satellite(
+    tmp_path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import importlib.util
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parents[1] / "scripts" / "demo_reasoning.py"
+    spec = importlib.util.spec_from_file_location("demo_reasoning", script)
+    assert spec and spec.loader
+    demo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(demo)
+
+    output = tmp_path / "demo.png"
+    assert demo.main(["--frames", "40", "--output", str(output)]) == 0
+    printed = capsys.readouterr().out
+    assert "Detected constellation: Orion (confidence: 0.75)" in printed
+    assert "X-Ray: inferred hidden stars" in printed
+    assert "Satellite detected: moving NW at 2.0°/sec" in printed
+    assert "Anomaly:" in printed
+    assert output.exists() and output.stat().st_size > 0
