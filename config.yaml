@@ -45,3 +45,12 @@ matcher:
 
 video:
   fps: 30
+
+# --- Stage 4: world model (Skyfield) -----------------------------------------
+
+world_model:
+  default_lat: 40.7128   # NYC
+  default_lon: -74.0060
+  min_altitude: 10       # degrees above horizon
+  timezone: America/New_York   # used for local times in demos
+  star_catalog: data/bright_stars.csv
