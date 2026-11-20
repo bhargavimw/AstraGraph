@@ -274,3 +274,15 @@ def test_best_viewing_month(model: SkyWorldModel) -> None:
     assert model.best_viewing_month("Cygnus", *NYC, tz=ny)[0] == 9  # late summer
     sydney = ZoneInfo("Australia/Sydney")
     assert model.best_viewing_month("Ursa Minor", -33.8688, 151.2093, tz=sydney) is None
+
+
+def test_sun_altitude_and_sky_darkness(model: SkyWorldModel) -> None:
+    # New York, 15 Jan 2024: local noon, dusk and the middle of the night.
+    noon = utc("2024-01-15T17:00:00")
+    lat_r, dec_r = math.radians(NYC[0]), math.radians(-21.1)  # Sun's declination
+    expected_noon = math.degrees(math.asin(math.sin(lat_r) * math.sin(dec_r)
+                                           + math.cos(lat_r) * math.cos(dec_r)))
+    assert model.sun_altitude(noon, *NYC) == pytest.approx(expected_noon, abs=0.5)
+    assert model.sky_darkness(noon, *NYC) == "day"
+    assert model.sky_darkness(utc("2024-01-15T22:00:00"), *NYC) == "twilight"
+    assert model.sky_darkness(utc("2024-01-16T03:00:00"), *NYC) == "night"
