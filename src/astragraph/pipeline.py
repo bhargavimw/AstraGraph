@@ -98,8 +98,16 @@ class FrameReport:
     def constellations(self) -> list[MatchResult]:
         """Matches the reasoner confirmed as identified, best first."""
         names = {c.fact[2] for c in self.conclusions if c.fact[0] == "identified_as"}
-        found = [m for m in self.matches.values() if m.constellation in names]
-        return sorted(found, key=lambda m: -m.confidence)
+        best: dict[str, MatchResult] = {}
+        for match in self.matches.values():  # one entry per constellation
+            if match.constellation not in names:
+                continue
+            current = best.get(match.constellation)
+            if current is None or (match.matched_nodes, -match.fit_error) > (
+                current.matched_nodes, -current.fit_error
+            ):
+                best[match.constellation] = match
+        return sorted(best.values(), key=lambda m: -m.confidence)
 
 
 def compass_heading(east: float, north: float) -> str:
@@ -121,6 +129,24 @@ def sky_motion(
     plane = match.transform.inverse().apply_vector(np.array(velocity_px))[0]
     east, north = -float(plane[0]), -float(plane[1])
     return math.hypot(east, north), compass_heading(east, north)
+
+
+def matching_groups(
+    clusters: Sequence[Sequence[int]], max_size: int
+) -> list[list[int]]:
+    """Star groups to match: each union-find cluster, plus all stars together.
+
+    Proximity clustering depends on zoom: a constellation whose "bridge" stars
+    are hidden can split into pieces. When the whole scene is small enough,
+    it is also matched as one group (outlier handling ignores extra stars),
+    so identification does not hinge on the cluster distance.
+    """
+    groups = [list(c) for c in clusters]
+    if len(groups) > 1:
+        everything = sorted(i for c in groups for i in c)
+        if len(everything) <= max_size:
+            groups.append(everything)
+    return groups
 
 
 def build_facts(
@@ -179,6 +205,7 @@ class SkyPipeline:
         self.matcher = ConstellationMatcher(self.config.matcher)
         self.reasoner = SkyReasoner(self.config.reasoner)
         self._match_cache: dict[frozenset[int], MatchResult] = {}
+        self._satellites: set[int] = set()
         self._frame_idx = -1
 
     def _match_clusters(
@@ -210,16 +237,21 @@ class SkyPipeline:
         detections = self.detector.detect(frame)
         tracks = self.tracker.track(frame, detections, idx)
         events = self.temporal.update(tracks, idx)
-        clusters = self.temporal.clusters
+        clusters = matching_groups(self.temporal.clusters, self.config.matcher.max_cluster_size)
         positions = {t.id: (t.x, t.y) for t in tracks}
         matches = self._match_clusters(clusters, positions)
 
         facts = build_facts(tracks, clusters, matches, self.temporal)
         conclusions = self.reasoner.reason(facts)
-        satellite_ids = {
+        # A satellite is reported once the is_satellite rule holds AND the
+        # temporal layer has debounced it (LINEAR_TRAJECTORY emitted). After
+        # that it stays flagged even if one frame's facts are inconclusive.
+        rule_ids = {
             int(str(f[1]).split(":")[1])
             for f in SkyReasoner.query(conclusions, "is_satellite")
-        } | set(self.temporal.satellites)
+        }
+        self._satellites |= rule_ids & set(self.temporal.satellites)
+        satellite_ids = set(self._satellites)
         anomaly_ids = sorted(
             int(str(f[1]).split(":")[1]) for f in SkyReasoner.query(conclusions, "is_anomaly")
         )
