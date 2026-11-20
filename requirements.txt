@@ -1,4 +1,8 @@
 networkx>=3.2
 matplotlib>=3.8
 PyYAML>=6.0
+numpy>=1.26
+opencv-python-headless>=4.9
+skyfield>=1.49
+skyfield-data>=6.0
 pytest>=8.0
