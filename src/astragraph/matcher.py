@@ -60,8 +60,8 @@ class _HasPosition(Protocol):
 class MatcherConfig:
     """Matcher parameters (``reasoning``/``matcher`` blocks of config.yaml)."""
 
-    distance_tolerance: float = 0.05
-    fit_tolerance: float = 0.03
+    distance_tolerance: float = 0.03
+    fit_tolerance: float = 0.015
     min_cluster_size: int = 4
     max_outliers: int = 2
     max_cluster_size: int = 16
@@ -276,12 +276,23 @@ class ConstellationMatcher:
     def match_template(
         self, points: Mapping[int, Point], template: ConstellationTemplate
     ) -> _Candidate | None:
-        """Best mapping of ``points`` onto one template (outliers allowed)."""
+        """Best mapping of ``points`` onto one template (outliers allowed).
+
+        Each ignored (outlier) star must be paid for with an extra matched
+        star: ``matched >= min_matched + outliers``, unless every template
+        star was found (a complete match is strong evidence). Four stars barely
+        constrain a shape, so a 4-star match that also discards stars is
+        usually a coincidence (measured: ~1 in 3 random 6-point sets).
+        """
         cfg = self.config
         ids = sorted(points)
         best: _Candidate | None = None
         for mapping in self._hypotheses(points, ids, template):
-            if len(ids) - len(mapping) > cfg.max_outliers:
+            outliers = len(ids) - len(mapping)
+            complete = len(mapping) == template.size  # every template star found
+            if outliers > cfg.max_outliers or (
+                len(mapping) < cfg.min_matched + outliers and not complete
+            ):
                 continue
             if not self._isomorphic(points, mapping, template):
                 continue
