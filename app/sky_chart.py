@@ -176,3 +176,47 @@ def animated_sky_chart(
         )],
     )
     return fig
+
+
+def constellation_figure(graph, name: str, *, height: int = 520) -> go.Figure:
+    """Themed, hoverable stick-figure chart of one constellation.
+
+    Stars are placed by tangent-plane projection (east left, north up, as in
+    the sky), sized by brightness, and labelled without overlaps.
+    """
+    from astragraph.geometry import sky_to_plane
+    from labels import place_labels
+
+    names = list(graph.nodes)
+    plane = sky_to_plane([graph.nodes[n]["ra"] for n in names],
+                         [graph.nodes[n]["dec"] for n in names])
+    pos = {n: (float(x), float(-y)) for n, (x, y) in zip(names, plane)}  # y up
+    mags = {n: float(graph.nodes[n]["magnitude"]) for n in names}
+
+    xs, ys = [], []
+    for a, b in graph.edges:
+        xs += [pos[a][0], pos[b][0], None]
+        ys += [pos[a][1], pos[b][1], None]
+    fig = go.Figure(go.Scatter(x=xs, y=ys, mode="lines", hoverinfo="skip",
+                               line=dict(color="rgba(127,168,255,0.9)", width=2.5),
+                               showlegend=False))
+    placement = place_labels(pos, width_px=560, height_px=height, font_px=13, priority=mags)
+    fig.add_trace(go.Scatter(
+        x=[pos[n][0] for n in names], y=[pos[n][1] for n in names],
+        mode="markers+text", text=names, textposition=[placement[n] for n in names],
+        textfont=dict(color="#dbe5ff", size=13),
+        marker=dict(size=[max(8.0, 26 - 5 * mags[n]) for n in names],
+                    color=["#fff2d6" if mags[n] < 1 else "#f5f8ff" for n in names],
+                    line=dict(width=6, color="rgba(156,194,255,0.18)")),
+        customdata=[[n, graph.nodes[n].get("designation", ""), mags[n]] for n in names],
+        hovertemplate=("<b>%{customdata[0]}</b><br>%{customdata[1]}"
+                       "<br>magnitude %{customdata[2]:.2f}<extra></extra>"),
+        showlegend=False,
+    ))
+    fig.update_layout(
+        height=height, title=dict(text=name, x=0.5, font=dict(size=20, color="#ffd36e")),
+        paper_bgcolor="rgba(7, 11, 23, 0.55)", plot_bgcolor="rgba(13, 20, 38, 0.55)",
+        margin=dict(l=16, r=16, t=56, b=16), dragmode=False,
+        xaxis=dict(visible=False), yaxis=dict(visible=False, scaleanchor="x"),
+    )
+    return fig

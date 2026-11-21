@@ -23,7 +23,6 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, available_timezones
 
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 
 # Load pandas fully on the main thread *before* any chart is drawn. Plotly
@@ -46,9 +45,9 @@ from astragraph.academy import AstronomyAcademy, Quiz, QuizResult, normalize_edg
 from astragraph.constellation_db import ConstellationDB, load_config, resolve_path  # noqa: E402
 from astragraph.pipeline import FrameReport, PipelineConfig, SkyPipeline  # noqa: E402
 from astragraph.synthetic import demo_sky_clip  # noqa: E402
-from astragraph.viz import plot_constellation  # noqa: E402
 from astragraph.world_model import SkyWorldModel, WorldModelConfig  # noqa: E402
-from sky_chart import animated_sky_chart  # noqa: E402
+from labels import place_labels  # noqa: E402
+from sky_chart import animated_sky_chart, constellation_figure  # noqa: E402
 from theme import (  # noqa: E402
     CHART_BG, CHART_PANEL, STARBURST_HTML, apply_theme, html, sidebar_logo, subtitle,
 )
@@ -437,9 +436,10 @@ def learn(db: ConstellationDB, model: SkyWorldModel,
 
     left, right = st.columns([3, 2])
     with left:
-        fig, _ = plot_constellation(graph, name)
-        st.pyplot(fig, width="stretch")
-        plt.close(fig)
+        st.plotly_chart(constellation_figure(graph, name), width="stretch",
+                        config={"displayModeBar": False}, key="learn_chart")
+        st.caption("Hover a star for its designation and brightness. East is on the "
+                   "left, as when you look up at the sky.")
     with right:
         st.subheader("Key stars")
         brightest = sorted(graph.nodes, key=lambda n: graph.nodes[n]["magnitude"])
@@ -496,9 +496,13 @@ def quiz_figure(quiz: Quiz, pending: str | None, result: QuizResult | None,
             add_lines(result.missing, QUIZ_COLORS["missing"], "dash", 2, label="missing")
 
     stars = list(quiz.stars)
+    placement = place_labels({s.name: (s.x, s.y) for s in stars}, width_px=900,
+                             height_px=560, font_px=11,
+                             priority={s.name: s.magnitude for s in stars})
     fig.add_trace(go.Scatter(
         x=[s.x for s in stars], y=[s.y for s in stars], mode="markers+text",
-        text=[s.name for s in stars], textposition="top center",
+        text=[s.name for s in stars],
+        textposition=[placement[s.name] for s in stars],  # no overlapping names
         textfont=dict(color="#c9d6f2", size=11),
         customdata=[s.name for s in stars],
         hovertemplate="%{customdata}<extra></extra>",
