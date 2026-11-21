@@ -232,7 +232,7 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
 [data-testid="stHeaderActionElements"], .stMarkdown h1 a, .stMarkdown h2 a,
 .stMarkdown h3 a {{ display: none !important; }}
 
-.ag-tonight {{ padding: 1.3rem 1.5rem; border-radius: 20px; margin-bottom: 1.4rem;
+.ag-tonight {{ padding: 1.3rem 1.5rem; border-radius: 20px; margin-bottom: 0.8rem;
   background: linear-gradient(135deg, rgba(12,22,52,0.75), rgba(10,14,34,0.6));
   border: 1px solid rgba(255,190,40,0.25); backdrop-filter: blur(10px); }}
 .ag-tonight .head {{ display: flex; justify-content: space-between; align-items: baseline;
@@ -280,6 +280,14 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
   100% {{ opacity: 0; transform: rotate(var(--a)) translateX(var(--r)) scale(0.4); }} }}
 @keyframes ag-flash {{ 0% {{ opacity: 0.95; transform: scale(0.3); }}
                        100% {{ opacity: 0; transform: scale(3); }} }}
+
+/* clickable constellation chips (st.pills) */
+[data-testid="stButtonGroup"] button {{ border-radius: 999px !important;
+  background: rgba(156,194,255,0.10) !important; border: 1px solid rgba(156,194,255,0.28) !important;
+  color: #dbe5ff !important; transition: all .2s ease; }}
+[data-testid="stButtonGroup"] button:hover {{ border-color: var(--ag-gold) !important;
+  color: var(--ag-gold-soft) !important; box-shadow: 0 0 14px rgba(255,190,40,0.3);
+  transform: translateY(-1px); }}
 
 /* ---------- comfort ---------- */
 @media (prefers-reduced-motion: reduce) {{

@@ -430,8 +430,8 @@ def learn(db: ConstellationDB, model: SkyWorldModel,
     st.header("📚 Learn")
     subtitle("Meet the constellations: their brightest stars, the best month to look "
              "and where they are in your sky tonight.")
-    name = st.selectbox("Choose a constellation", db.list_constellations(),
-                        index=db.list_constellations().index("Orion"), key="learn_name")
+    st.session_state.setdefault("learn_name", "Orion")  # Home's chips may preselect one
+    name = st.selectbox("Choose a constellation", db.list_constellations(), key="learn_name")
     graph = db[name]
 
     left, right = st.columns([3, 2])
@@ -734,6 +734,15 @@ def go_to(mode: str) -> None:
     st.session_state["mode"] = mode
 
 
+def open_constellation(widget_key: str) -> None:
+    """Open the Learn page on the constellation picked in ``widget_key``."""
+    name = st.session_state.get(widget_key)
+    if name:
+        st.session_state["learn_name"] = name
+        st.session_state["mode"] = "Learn"
+        st.session_state[widget_key] = None  # clear the pick for next time
+
+
 def tonight_card(model: SkyWorldModel, db: ConstellationDB, lat: float, lon: float,
                  tz: ZoneInfo) -> None:
     try:
@@ -759,10 +768,6 @@ def tonight_card(model: SkyWorldModel, db: ConstellationDB, lat: float, lon: flo
                     f"at {local(night.viewing_time)}")
     else:
         best_value, best_sub = "None of the 8", "Try another hour or location"
-    chips = "".join(
-        f'<span class="ag-chip{" gold" if i == 0 else ""}">{c.name} · {c.direction}</span>'
-        for i, c in enumerate(night.constellations)
-    )
     stars = ", ".join(night.bright_stars) or "—"
     html(f"""
 <div class="ag-tonight">
@@ -779,9 +784,19 @@ def tonight_card(model: SkyWorldModel, db: ConstellationDB, lat: float, lon: flo
     <div class="ag-stat"><div class="k">Brightest stars up</div>
       <div class="v" style="font-size:1rem">{stars}</div></div>
   </div>
-  <div class="ag-chips">{chips}</div>
 </div>
 """)
+    if night.constellations:
+        directions = {c.name: c.direction for c in night.constellations}
+        best_name = night.constellations[0].name
+        st.pills(
+            "🔭 Up tonight: tap one to explore it",
+            options=list(directions),
+            format_func=lambda n: f"{'⭐ ' if n == best_name else ''}{n} · {directions[n]}",
+            key="tonight_pick",
+            on_change=open_constellation,
+            args=("tonight_pick",),
+        )
 
 
 def home(db: ConstellationDB, model: SkyWorldModel, lat: float, lon: float,
