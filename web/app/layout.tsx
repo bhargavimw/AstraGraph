@@ -40,8 +40,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable}`}>
-      <body>
+    // suppressHydrationWarning: browser extensions (e.g. LanguageTool, Grammarly)
+    // add attributes to <html>/<body> before React loads. This only silences
+    // attribute differences on these two tags, not on the rest of the page.
+    <html lang="en" className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-gold focus:px-4 focus:py-2 focus:text-void"
