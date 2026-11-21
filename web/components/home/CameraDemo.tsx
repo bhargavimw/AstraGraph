@@ -9,7 +9,7 @@ import { prepareContext, useCanvas } from "@/hooks/useCanvas";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /**
- * Looping mock of the Live Camera inside a phone frame: stars fade in, green
+ * Looping demo of the Live Camera inside a phone frame: stars fade in, green
  * detection rings pop on, gold constellation lines draw themselves, then the
  * name and confidence appear. Pure canvas animation — no camera needed.
  */

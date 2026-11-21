@@ -5,25 +5,14 @@ import QuizDemo from "@/components/home/QuizDemo";
 import SkyMotionDemo from "@/components/home/SkyMotionDemo";
 import StoriesDemo from "@/components/home/StoriesDemo";
 import StorySection from "@/components/home/StorySection";
-import TonightStrip from "@/components/home/TonightStrip";
-import UpTonight from "@/components/home/UpTonight";
-import { MOCK_TONIGHT } from "@/lib/mock";
-
-// Tonight's data is sample data until the API client is wired in step 3.
-const tonight = MOCK_TONIGHT;
+import TonightSection from "@/components/home/TonightSection";
 
 export default function HomePage() {
   return (
     <>
       <Hero />
 
-      <section id="tonight" className="mx-auto max-w-[100rem] scroll-mt-28 px-6 pt-10 sm:px-10 lg:px-16">
-        <p className="label-caps mb-5">Tonight&apos;s sky</p>
-        <TonightStrip data={tonight} />
-        <div className="mt-10">
-          <UpTonight items={tonight.upTonight} />
-        </div>
-      </section>
+      <TonightSection />
 
       <StorySection
         index="01"
