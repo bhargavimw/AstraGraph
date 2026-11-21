@@ -39,7 +39,9 @@ from astragraph.synthetic import demo_sky_clip  # noqa: E402
 from astragraph.viz import plot_constellation  # noqa: E402
 from astragraph.world_model import SkyWorldModel, WorldModelConfig  # noqa: E402
 from sky_chart import animated_sky_chart  # noqa: E402
-from theme import CHART_BG, CHART_PANEL, apply_theme, html, sidebar_logo, subtitle  # noqa: E402
+from theme import (  # noqa: E402
+    CHART_BG, CHART_PANEL, STARBURST_HTML, apply_theme, html, sidebar_logo, subtitle,
+)
 from tonight import tonight_summary  # noqa: E402
 from utils import FPSCounter, annotate_frame, downscale  # noqa: E402
 
@@ -453,7 +455,8 @@ def load_academy() -> AstronomyAcademy:
     return AstronomyAcademy(db)
 
 
-def quiz_figure(quiz: Quiz, pending: str | None, result: QuizResult | None):
+def quiz_figure(quiz: Quiz, pending: str | None, result: QuizResult | None,
+                hints: bool = False):
     """Plotly chart of the quiz: stars as clickable points, lines as drawn."""
     import plotly.graph_objects as go
 
@@ -471,7 +474,10 @@ def quiz_figure(quiz: Quiz, pending: str | None, result: QuizResult | None):
                                      line=dict(color=color, width=width, dash=dash),
                                      name=label or "", showlegend=label is not None))
 
-    if result is None:
+    if result is None and hints:  # instant feedback while drawing
+        add_lines(quiz.user_edges & quiz.correct_edges, QUIZ_COLORS["correct"])
+        add_lines(quiz.user_edges - quiz.correct_edges, QUIZ_COLORS["extra"])
+    elif result is None:
         add_lines(quiz.user_edges, QUIZ_COLORS["line"])
     else:
         add_lines(result.correct, QUIZ_COLORS["correct"], label="correct")
@@ -516,12 +522,44 @@ def _quiz_state(academy: AstronomyAcademy, name: str, distractors: int) -> dict:
     return state
 
 
-def _connect(state: dict, a: str, b: str) -> None:
+def _connect(state: dict, a: str, b: str, hints: bool = False) -> None:
     if a == b:
         return
-    added = state["quiz"].toggle_edge(a, b)
+    quiz: Quiz = state["quiz"]
+    added = quiz.toggle_edge(a, b)
     state["history"].append((a, b, added))
     state["result"] = None
+    if hints and added:  # shown on the next run (a toast just before st.rerun is lost)
+        if normalize_edge(a, b) in quiz.correct_edges:
+            state["toast"] = f"✨ {a} – {b} is a real line of {quiz.constellation}!"
+        else:
+            state["toast"] = f"🤔 {a} – {b} isn't part of {quiz.constellation}."
+
+
+def stars_for(score: float) -> str:
+    """1–3 star rating for a quiz score."""
+    filled = 3 if score >= 1.0 else 2 if score >= 0.6 else 1 if score > 0 else 0
+    return "★" * filled + "☆" * (3 - filled)
+
+
+def record_score(name: str, score: float) -> None:
+    scores: dict[str, float] = st.session_state.setdefault("quiz_scores", {})
+    scores[name] = max(score, scores.get(name, 0.0))
+
+
+def progress_panel(names: list[str]) -> None:
+    """Running score across constellations."""
+    scores: dict[str, float] = st.session_state.get("quiz_scores", {})
+    mastered = sum(1 for n in names if scores.get(n, 0.0) >= 1.0)
+    st.progress(mastered / len(names),
+                text=f"🏆 Constellations mastered: {mastered} / {len(names)}")
+    if scores:
+        chips = "".join(
+            f'<span class="ag-chip{" gold" if scores.get(n, 0) >= 1 else ""}">'
+            f'{n} {stars_for(scores[n])}</span>'
+            for n in names if n in scores
+        )
+        html(f'<div class="ag-chips" style="margin:-0.4rem 0 0.6rem 0">{chips}</div>')
 
 
 def quiz_tab(academy: AstronomyAcademy) -> None:
@@ -531,7 +569,11 @@ def quiz_tab(academy: AstronomyAcademy) -> None:
     level = col2.radio("Difficulty", ["Easy", "Hard (3 extra stars)"], horizontal=True,
                        key="quiz_level")
     distractors = 0 if level == "Easy" else 3
+    hints = st.toggle("💡 Instant feedback (colour each line as you draw it)", key="quiz_hints")
+    progress_panel(names)
     state = _quiz_state(academy, name, distractors)
+    if state.get("toast"):
+        st.toast(state.pop("toast"))
     quiz: Quiz = state["quiz"]
     if col3.button("🔄 New quiz", width="stretch"):
         st.session_state.pop("quiz", None)
@@ -542,7 +584,7 @@ def quiz_tab(academy: AstronomyAcademy) -> None:
                "Click the same pair again to remove it. East is on the left, as in the sky.")
 
     event = st.plotly_chart(
-        quiz_figure(quiz, state["pending"], state["result"]),
+        quiz_figure(quiz, state["pending"], state["result"], hints),
         on_select="rerun", selection_mode="points",
         key=f"quiz_chart_{state['nonce']}", width="stretch",
         config={"displayModeBar": False},
@@ -557,7 +599,7 @@ def quiz_tab(academy: AstronomyAcademy) -> None:
         if state["pending"] is None:
             state["pending"] = clicked
         else:
-            _connect(state, state["pending"], clicked)
+            _connect(state, state["pending"], clicked, hints)
             state["pending"] = None
         state["nonce"] += 1  # fresh chart so the next click registers
         st.rerun()
@@ -568,7 +610,7 @@ def quiz_tab(academy: AstronomyAcademy) -> None:
         a = c1.selectbox("From", star_names, key="quiz_from")
         b = c2.selectbox("To", star_names, index=min(1, len(star_names) - 1), key="quiz_to")
         if c3.button("Connect", width="stretch", disabled=a == b):
-            _connect(state, a, b)
+            _connect(state, a, b, hints)
             st.rerun()
 
     b1, b2, b3, b4 = st.columns(4)
@@ -587,15 +629,21 @@ def quiz_tab(academy: AstronomyAcademy) -> None:
                  disabled=not quiz.user_edges):
         state["result"] = quiz.grade()
         state["pending"] = None
+        state["celebrate"] = state["result"].perfect
+        record_score(name, state["result"].score)
         st.rerun()
 
     result: QuizResult | None = state["result"]
     if result is not None:
         if result.perfect:
-            st.success(f"🎉 Perfect! You drew {name} exactly — score {result.score:.0%}.")
-            st.balloons()
+            st.success(f"🎉 Perfect! You drew {name} exactly — score {result.score:.0%} "
+                       f"{stars_for(result.score)}")
+            if state.pop("celebrate", False):  # play the starburst once
+                html(STARBURST_HTML)
+                st.toast(f"🌟 {name} mastered!")
         else:
-            st.warning(f"Score: **{result.score:.0%}** — {len(result.correct)} correct, "
+            st.warning(f"Score: **{result.score:.0%}** {stars_for(result.score)} — "
+                       f"{len(result.correct)} correct, "
                        f"{len(result.missing)} missing, {len(result.extra)} extra.")
             if result.same_shape:
                 st.info("Nice — your drawing has exactly the right *shape* (the graphs are "
