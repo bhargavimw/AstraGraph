@@ -125,14 +125,19 @@ def animated_sky_chart(
         ))
     labels = [(start + timedelta(hours=h)).astimezone(tz).strftime("%H:%M") for h in hours]
 
-    fig = go.Figure(data=frames[initial_index].data, frames=frames)
+    # Plotly plays frames in list order and, before any interaction, starts at
+    # the first one. Rotating the list to begin at the opening time makes ▶ Play
+    # run forward from there (looping round the 24 h); the slider keeps
+    # chronological order because its steps name frames explicitly.
+    ordered = frames[initial_index:] + frames[:initial_index]
+    fig = go.Figure(data=frames[initial_index].data, frames=ordered)
     play = dict(frame=dict(duration=280, redraw=True), transition=dict(duration=0),
                 fromcurrent=True, mode="immediate")
     fig.update_layout(
         height=height,
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color=LABEL),
-        margin=dict(l=20, r=20, t=30, b=20),
+        margin=dict(l=20, r=20, t=30, b=40),
         polar=dict(
             bgcolor="rgba(13, 20, 38, 0.55)",
             radialaxis=dict(range=[0, 90], showticklabels=False, ticks="",
@@ -146,7 +151,7 @@ def animated_sky_chart(
         ),
         updatemenus=[dict(
             type="buttons", direction="left", x=0.0, y=-0.02, xanchor="left", yanchor="top",
-            pad=dict(r=8, t=8), bgcolor="rgba(255,190,40,0.15)",
+            pad=dict(r=8, t=34), showactive=False, bgcolor="rgba(255,190,40,0.15)",
             bordercolor="rgba(255,190,40,0.6)", font=dict(color="#ffd36e"),
             buttons=[
                 dict(label="▶ Play", method="animate", args=[None, play]),
@@ -156,8 +161,10 @@ def animated_sky_chart(
             ],
         )],
         sliders=[dict(
-            active=initial_index, x=0.18, y=-0.02, len=0.82, yanchor="top",
-            pad=dict(t=8), currentvalue=dict(prefix="Local time ", font=dict(color=GOLD)),
+            active=initial_index, x=0.2, y=-0.02, len=0.8, yanchor="top",
+            pad=dict(t=8),
+            currentvalue=dict(prefix="Local time ", xanchor="right",
+                              font=dict(color=GOLD, size=14)),
             bgcolor="rgba(255,190,40,0.25)", activebgcolor=GOLD,
             bordercolor="rgba(156,194,255,0.3)", tickcolor="#8a97b8",
             font=dict(color="#8a97b8", size=10),

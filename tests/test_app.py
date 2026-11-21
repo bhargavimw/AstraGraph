@@ -152,6 +152,7 @@ def test_animated_sky_chart_has_frames_and_hover(db) -> None:
     assert any(row[0] == "Betelgeuse" for row in stars.customdata)
     assert "Orion" in fig.data[3].text  # constellation label shown
     assert fig.layout.polar.angularaxis.direction == "counterclockwise"  # east on the left
+    assert fig.frames[0].name == "+3.0"  # ▶ Play starts at the opening time
 
 
 # ------------------------------------------------------------ whole app
