@@ -37,6 +37,7 @@ from astragraph.pipeline import FrameReport, PipelineConfig, SkyPipeline  # noqa
 from astragraph.synthetic import demo_sky_clip  # noqa: E402
 from astragraph.viz import plot_constellation  # noqa: E402
 from astragraph.world_model import SkyWorldModel, WorldModelConfig  # noqa: E402
+from sky_chart import animated_sky_chart  # noqa: E402
 from theme import CHART_BG, CHART_PANEL, apply_theme, sidebar_logo, subtitle  # noqa: E402
 from utils import FPSCounter, annotate_frame, downscale  # noqa: E402
 
@@ -45,9 +46,7 @@ MAX_WIDTH = 1280  # wider frames are downscaled (peak-preserving) for speed
 MONTHS = ["January", "February", "March", "April", "May", "June", "July",
           "August", "September", "October", "November", "December"]
 COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
-SKY_BG, PANEL_BG, GOLD_HEX, STAR_HEX, GRID_HEX = (
-    "#070b17", "#0d1426", "#ffbe28", "#f5f8ff", "#2a3a5e"
-)
+GOLD_HEX = "#ffbe28"
 COMMON_TIMEZONES = [
     "UTC", "America/New_York", "America/Chicago", "America/Denver",
     "America/Los_Angeles", "Europe/London", "Europe/Paris", "Asia/Kolkata",
@@ -289,48 +288,14 @@ def live_camera(db: ConstellationDB, config: dict) -> None:
 
 
 # -------------------------------------------------------------- time travel
-def sky_chart(model: SkyWorldModel, db: ConstellationDB, moment: datetime,
-              lat: float, lon: float, highlight: str | None = None):
-    """Polar sky chart: zenith centre, N up, E left (as seen looking up)."""
-    fig = plt.figure(figsize=(7.2, 7.2), facecolor="none")  # let the starfield show
-    ax = fig.add_subplot(projection="polar", facecolor=(0.05, 0.08, 0.15, 0.55))
-    ax.set_theta_zero_location("N")
-    ax.set_theta_direction(1)  # counter-clockwise: east on the left
-    ax.set_ylim(0, 90)
-    ax.set_yticks([30, 60, 90])
-    ax.set_yticklabels(["60°", "30°", "0°"], color=GRID_HEX, fontsize=7)
-    ax.set_xticks(np.radians([0, 90, 180, 270]))
-    ax.set_xticklabels(["N", "E", "S", "W"], color="#c9d6f2", fontsize=11)
-    ax.grid(color=GRID_HEX, linewidth=0.6)
-    ax.spines["polar"].set_color(GRID_HEX)
-
-    stars = [s for s in model.get_all_stars(moment, lat, lon) if s.altitude > 0]
-    if stars:
-        ax.scatter(np.radians([s.azimuth for s in stars]), [90 - s.altitude for s in stars],
-                   s=[max(2.0, 26 - 7 * s.magnitude) for s in stars],
-                   c=STAR_HEX, linewidths=0, alpha=0.9, zorder=3)
-
-    for name in db.list_constellations():
-        graph = db[name]
-        nodes = list(graph.nodes)
-        positions = dict(zip(nodes, model.altaz_many(
-            [graph.nodes[n]["ra"] for n in nodes], [graph.nodes[n]["dec"] for n in nodes],
-            moment, lat, lon)))
-        color = GOLD_HEX if name == highlight else "#7fa8ff"
-        width = 2.0 if name == highlight else 1.0
-        for a, b in graph.edges:
-            (az1, alt1), (az2, alt2) = positions[a], positions[b]
-            if alt1 > 0 and alt2 > 0:
-                ax.plot(np.radians([az1, az2]), [90 - alt1, 90 - alt2],
-                        color=color, linewidth=width, alpha=0.9, zorder=2)
-        up = [(az, alt) for az, alt in positions.values() if alt > 0]
-        if len(up) >= len(nodes) / 2:
-            az = max(up, key=lambda p: p[1])
-            ax.annotate(name, (np.radians(az[0]), 90 - az[1]), color=color,
-                        fontsize=9 if name == highlight else 8, fontweight="bold",
-                        xytext=(6, 6), textcoords="offset points", zorder=4)
-    fig.tight_layout()
-    return fig
+@st.cache_data(show_spinner=False, max_entries=16)
+def cached_sky_chart(start_iso: str, lat: float, lon: float, tz_name: str,
+                     initial_hours: float, highlight: str):
+    """Animated chart for a start time/place (cached: building it takes ~1.5 s)."""
+    db, model, _ = load_resources()
+    return animated_sky_chart(model, db, datetime.fromisoformat(start_iso), lat, lon,
+                              ZoneInfo(tz_name), initial_hours=initial_hours,
+                              highlight=highlight)
 
 
 def time_travel(db: ConstellationDB, model: SkyWorldModel,
@@ -353,7 +318,7 @@ def time_travel(db: ConstellationDB, model: SkyWorldModel,
     try:
         with st.spinner("Computing the sky…"):
             az, alt = model.get_constellation_position(target, moment, lat, lon)
-            fig = sky_chart(model, db, moment, lat, lon, highlight=target)
+            fig = cached_sky_chart(start.isoformat(), lat, lon, tz.key, hours, target)
     except Exception as exc:
         st.error(f"Could not compute the sky for that time: {exc}")
         return
@@ -378,10 +343,12 @@ def time_travel(db: ConstellationDB, model: SkyWorldModel,
 
     left, right = st.columns([3, 2])
     with left:
-        st.pyplot(fig, width="stretch")
-        plt.close(fig)
-        st.caption(f"Sky at {fmt_time(moment, tz)}. Centre = straight up, edge = horizon. "
-                   "East is on the left because the chart is seen looking up.")
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False},
+                        key="sky_chart")
+        st.caption(f"Opens at {fmt_time(moment, tz)}. Press ▶ Play to watch the whole day "
+                   "turn, drag the time bar, and hover any star for its name. Centre = "
+                   "straight up, edge = horizon; east is on the left because the chart "
+                   "is seen looking up.")
     with right:
         st.subheader("Where are they?")
         rows = []
