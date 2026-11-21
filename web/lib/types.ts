@@ -1,8 +1,22 @@
 /**
- * Shared types. API response types are added in step 3, when the client is
- * wired to the backend; shapes mirror the repository's data files
- * (data/constellations.json, data/constellation_info.json).
+ * Shared types. Catalogue types mirror the repository's data files
+ * (data/constellations.json, data/constellation_info.json); API types at the
+ * end are inferred from the response schemas in lib/api-schemas.ts.
  */
+
+import type { z } from "zod";
+import type {
+  ConstellationDetailSchema,
+  ConstellationSummarySchema,
+  DemoSkyInfoSchema,
+  FrameResponseSchema,
+  MoonSchema,
+  QuizGradeSchema,
+  QuizNewSchema,
+  SkyResponseSchema,
+  SkyStarSchema,
+  TonightResponseSchema,
+} from "@/lib/api-schemas";
 
 /** Observer location shared through `useLocation()`. */
 export interface ObserverLocation {
@@ -92,3 +106,18 @@ export interface TonightSummary {
   brightestStars: string[];
   upTonight: Array<{ name: string; direction: Compass }>;
 }
+
+// ------------------------------------------------------------------ API types
+// Inferred from the runtime schemas in lib/api-schemas.ts, so the types and the
+// validation can never drift apart.
+
+export type ApiMoon = z.infer<typeof MoonSchema>;
+export type ApiSkyStar = z.infer<typeof SkyStarSchema>;
+export type ApiSky = z.infer<typeof SkyResponseSchema>;
+export type ApiTonight = z.infer<typeof TonightResponseSchema>;
+export type ApiConstellationSummary = z.infer<typeof ConstellationSummarySchema>;
+export type ApiConstellationDetail = z.infer<typeof ConstellationDetailSchema>;
+export type ApiQuiz = z.infer<typeof QuizNewSchema>;
+export type ApiQuizGrade = z.infer<typeof QuizGradeSchema>;
+export type ApiFrame = z.infer<typeof FrameResponseSchema>;
+export type ApiDemoSkyInfo = z.infer<typeof DemoSkyInfoSchema>;
