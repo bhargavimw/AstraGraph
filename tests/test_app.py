@@ -370,3 +370,37 @@ def test_charts_build_concurrently_without_import_errors(db) -> None:
         futures = [pool.submit(sky) for _ in range(2)] + [pool.submit(quiz, demo) for _ in range(2)]
         figures = [f.result() for f in futures]  # raises if any thread failed
     assert all(fig.data for fig in figures)
+
+
+def test_place_labels_separates_orions_belt(db) -> None:
+    from astragraph.academy import AstronomyAcademy
+    from labels import label_box, label_scale, place_labels
+
+    academy = AstronomyAcademy(db)
+    for name in db.list_constellations():
+        for distractors in (0, 3):
+            quiz = academy.generate_quiz(name, distractors=distractors, seed=1)
+            points = {s.name: (s.x, s.y) for s in quiz.stars}
+            chosen = place_labels(points, priority={s.name: s.magnitude for s in quiz.stars})
+            char_w, line_h, gap = label_scale(points, 600, 560, 12)
+            boxes = [label_box(points[n], n, chosen[n], char_w, line_h, gap) for n in points]
+            clashes = [(i, j) for i in range(len(boxes)) for j in range(i + 1, len(boxes))
+                       if boxes[i].overlap(boxes[j]) > 0]
+            assert clashes == [], (name, distractors)
+    belt = academy.generate_quiz("Orion")
+    chosen = place_labels({s.name: (s.x, s.y) for s in belt.stars})
+    assert len({chosen["Alnitak"], chosen["Alnilam"], chosen["Mintaka"]}) == 3
+
+
+def test_learn_constellation_figure(db) -> None:
+    from sky_chart import constellation_figure
+
+    fig = constellation_figure(db["Orion"], "Orion")
+    stars = fig.data[1]
+    names = list(stars.text)
+    assert set(names) == set(db["Orion"].nodes)
+    positions = dict(zip(names, stars.textposition))
+    assert len({positions["Alnitak"], positions["Alnilam"], positions["Mintaka"]}) == 3
+    x = dict(zip(names, stars.x))
+    y = dict(zip(names, stars.y))
+    assert y["Betelgeuse"] > y["Rigel"] and x["Betelgeuse"] < x["Rigel"]  # N up, E left
