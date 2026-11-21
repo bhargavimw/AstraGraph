@@ -404,3 +404,21 @@ def test_learn_constellation_figure(db) -> None:
     x = dict(zip(names, stars.x))
     y = dict(zip(names, stars.y))
     assert y["Betelgeuse"] > y["Rigel"] and x["Betelgeuse"] < x["Rigel"]  # N up, E left
+
+
+def test_tonight_chips_open_learn_on_that_constellation() -> None:
+    app = run_app()
+    chips = app.button_group
+    if not len(chips):
+        pytest.skip("No constellations above the horizon at this moment")
+    label = chips[0].options[-1]  # e.g. "Leo · E" (what is up depends on the clock)
+    name = label.replace("⭐ ", "").split(" · ")[0]
+    chips[0].set_value(name).run()
+    assert not app.exception and not app.error
+    assert app.sidebar.radio[0].value == "Learn"
+    assert app.selectbox(key="learn_name").value == name
+    assert not any("Session State" in w.value for w in app.warning)
+    # Going back home works and the chip selection has been cleared.
+    app.sidebar.radio[0].set_value("Home").run()
+    assert not app.exception
+    assert app.button_group[0].value is None
