@@ -9,12 +9,16 @@ connections behind it.
 
 | Mode | What you can do |
 | --- | --- |
+| 🏠 **Home** | A welcome page with an animated orrery and a **Tonight's sky** card for your location: when it gets dark, the Moon's phase (and whether it will wash out faint stars), the best constellation to look for and the brightest stars up. |
 | 🔭 **Live Camera** | Point a webcam at the sky, upload a photo or video, or run the built-in demo sky. Stars get green circles and the constellation gets gold lines with its name and confidence. Stars hidden by clouds are inferred and drawn as cyan "ghosts", satellites are tracked in red with their speed and direction, and bright objects missing from the catalog (such as planets) are flagged. |
-| ⏳ **Time Travel** | Slide from −12 to +12 hours and watch the sky turn on a live sky chart: *"In 3 hours, Orion will be at azimuth 220°, altitude 45°."* It also warns you when the Sun is up. |
+| ⏳ **Time Travel** | An interactive, animated sky chart: press ▶ Play to watch 24 hours of sky turn, drag the time bar, and hover any star for its name, constellation and brightness. The slider gives messages like *"In 3 hours, Orion will be at azimuth 220°, altitude 45°."*, with a warning when the Sun is up. |
 | 📚 **Learn** | Pick a constellation to see its chart, key stars, the best month to look, where it is right now and when it rises and sets tonight. |
-| 🎓 **Academy** | **Quiz:** click stars to draw a constellation; you get a score, a "right shape, wrong stars" hint and the correct answer, with an optional hard mode that adds distractor stars. **Info:** the mythology, key stars with facts, best season and a fun fact for each constellation. |
+| 🎓 **Academy** | **Quiz:** click stars to draw a constellation. Optional instant feedback colours each line green or red as you draw it. You get a score with a 1–3 star rating, a "right shape, wrong stars" hint, the correct answer, a starburst for a perfect drawing and a "constellations mastered" progress bar; hard mode adds distractor stars. **Info:** the mythology, key stars with facts, best season and a fun fact for each constellation. |
 
-Everything runs locally. Images never leave your computer.
+The whole app sits on an animated night sky (drifting, twinkling stars, a soft
+nebula glow and the occasional shooting star); animation switches off when
+your system asks for reduced motion. Everything runs locally, and images
+never leave your computer.
 
 ## Why it is useful
 
@@ -129,27 +133,32 @@ pytest                                      # full test suite
 | `pipeline.py` | Runs detector → tracker → temporal graph → matcher → reasoner per frame |
 | `world_model.py` | Star positions, visibility, constellation lookup, rise/set times, Sun altitude |
 | `academy.py` | Constellation info, star profiles, connect-the-dots quizzes graded as graphs |
-| `app/` | Streamlit app and OpenCV overlay helpers |
+| `app/` | Streamlit app: `demo.py` (pages), `theme.py` (animated sky and styling), `sky_chart.py` (animated Plotly chart), `tonight.py` (Tonight's sky), `utils.py` (OpenCV overlays) |
 
 ## Screenshots
+
+**Home:** Tonight's sky for your location, over the animated starfield.
+
+![Home](docs/screenshots/home.jpg)
 
 **Live Camera:** Orion identified in the demo sky, with two cloud-hidden stars
 inferred as ghosts and a planet flagged as "not in catalog".
 
 ![Live Camera](docs/screenshots/live_camera.jpg)
 
-**Time Travel:** the sky over New York 9 hours ahead, with Orion highlighted.
+**Time Travel:** the animated sky chart with Orion highlighted and a star's
+hover card; press ▶ Play to watch the sky turn.
 
-![Time Travel](docs/screenshots/time_travel.png)
+![Time Travel](docs/screenshots/time_travel.jpg)
 
-**Academy quiz:** a graded attempt at Orion. Green lines are correct, red is
-not part of the figure, and dashed gold lines were missing.
+**Academy quiz:** drawing Orion with instant feedback on: green lines are
+real, red ones are not part of the figure.
 
-![Academy quiz](docs/screenshots/academy_quiz.png)
+![Academy quiz](docs/screenshots/academy_quiz.jpg)
 
 **Academy info card:** mythology, key stars and live position.
 
-![Academy info](docs/screenshots/academy_info.png)
+![Academy info](docs/screenshots/academy_info.jpg)
 
 ## Configuration
 
