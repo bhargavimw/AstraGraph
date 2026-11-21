@@ -303,3 +303,28 @@ def test_academy_info_tab_shows_card() -> None:
     text = " ".join(m.value for m in app.markdown)
     assert "Mythology" in text and "Key stars" in text and "Antares" in text
     assert any("Ophiuchus" in i.value for i in app.info)  # Scorpius fun fact
+
+
+def test_academy_instant_feedback_and_progress() -> None:
+    from astragraph.academy import normalize_edges
+
+    database = ConstellationDB.from_config("config.yaml")
+    database.load()
+    app = run_app("Academy")
+    app.selectbox(key="quiz_name").set_value("Cassiopeia").run()
+    app.toggle(key="quiz_hints").set_value(True).run()
+
+    app.selectbox(key="quiz_from").set_value("Caph")
+    app.selectbox(key="quiz_to").set_value("Segin")  # not a Cassiopeia line
+    _button(app, "Connect").click().run()
+    assert any("isn't part of Cassiopeia" in t.value for t in app.toast)
+    _button(app, "Undo").click().run()
+
+    for a, b in sorted(normalize_edges(database["Cassiopeia"].edges)):
+        app.selectbox(key="quiz_from").set_value(a)
+        app.selectbox(key="quiz_to").set_value(b)
+        _button(app, "Connect").click().run()
+    assert any("is a real line of Cassiopeia" in t.value for t in app.toast)
+    _button(app, "Submit").click().run()
+    assert any("Perfect" in s.value and "★★★" in s.value for s in app.success)
+    assert "Constellations mastered: 1 / 8" in app.get("progress")[0].proto.text
