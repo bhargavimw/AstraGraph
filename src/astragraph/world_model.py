@@ -263,6 +263,53 @@ class SkyWorldModel:
             return "day"
         return "twilight" if sun > -12.0 else "night"
 
+    def darkness_window(
+        self, day: date, lat: float, lon: float, *, tz: tzinfo = timezone.utc
+    ) -> tuple[datetime | None, datetime | None]:
+        """Night that begins on local ``day``: (dusk, dawn) in UTC.
+
+        "Dark" means the Sun is more than 12° below the horizon (end of
+        nautical twilight) — dark enough for constellations. Returns
+        ``(None, None)`` when it never gets that dark (e.g. summer near the
+        poles); either end can be ``None`` if it falls outside the window.
+        """
+        if isinstance(day, datetime):
+            day = day.date()
+        _validate_location(lat, lon)
+        topos = wgs84.latlon(lat, lon, elevation_m=self.config.elevation_m)
+        start = datetime.combine(day, time(12, 0), tzinfo=tz)  # local noon
+        t0, t1 = self._time(start), self._time(start + timedelta(days=1))
+        state = almanac.dark_twilight_day(self._eph, topos)
+        times, values = almanac.find_discrete(t0, t1, state)
+        dusk = dawn = None
+        previous = int(state(t0))
+        for t, value in zip(times, values):
+            value = int(value)
+            if previous >= 2 and value <= 1 and dusk is None:
+                dusk = t.utc_datetime().replace(microsecond=0)
+            elif previous <= 1 and value >= 2 and dusk is not None and dawn is None:
+                dawn = t.utc_datetime().replace(microsecond=0)
+            previous = value
+        if dusk is None and int(state(t0)) <= 1:  # already dark at noon (polar night)
+            return start.astimezone(timezone.utc), dawn
+        return dusk, dawn
+
+    def moon_info(self, time_utc: datetime, lat: float, lon: float) -> dict[str, Any]:
+        """Moon phase, illuminated fraction and altitude for the observer."""
+        t = self._time(time_utc)
+        observer = self._observer(lat, lon)
+        apparent = observer.at(t).observe(self._eph["moon"]).apparent()
+        illuminated = float(apparent.fraction_illuminated(self._eph["sun"]))
+        phase = float(almanac.moon_phase(self._eph, t).degrees)  # 0 new, 180 full
+        names = ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
+                 "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"]
+        return {
+            "phase_degrees": phase,
+            "phase_name": names[int(((phase + 22.5) % 360) // 45)],
+            "illuminated": illuminated,
+            "altitude": float(apparent.altaz()[0].degrees),
+        }
+
     def best_viewing_month(
         self,
         name: str,
