@@ -37,6 +37,7 @@ from astragraph.pipeline import FrameReport, PipelineConfig, SkyPipeline  # noqa
 from astragraph.synthetic import demo_sky_clip  # noqa: E402
 from astragraph.viz import plot_constellation  # noqa: E402
 from astragraph.world_model import SkyWorldModel, WorldModelConfig  # noqa: E402
+from theme import CHART_BG, CHART_PANEL, apply_theme, sidebar_logo, subtitle  # noqa: E402
 from utils import FPSCounter, annotate_frame, downscale  # noqa: E402
 
 CONFIG_PATH = ROOT / "config.yaml"
@@ -86,8 +87,7 @@ def rise_then_set(lookup, day: date) -> tuple[datetime | None, datetime | None]:
 
 # ------------------------------------------------------------------ sidebar
 def sidebar(config: dict) -> tuple[str, float, float, ZoneInfo]:
-    st.sidebar.title("✨ AstraGraph")
-    st.sidebar.caption("Learn & explore the night sky")
+    sidebar_logo()
     mode = st.sidebar.radio(
         "Mode", ["Live Camera", "Time Travel", "Learn", "Academy"],
         help="Live Camera finds constellations in images; Time Travel predicts "
@@ -211,9 +211,11 @@ def webcam_section(db: ConstellationDB, pipeline_config: PipelineConfig) -> None
 
 def live_camera(db: ConstellationDB, config: dict) -> None:
     st.header("🔭 Live Camera — SkyFinder")
-    st.write("Point at the sky and AstraGraph draws the constellation: "
-             "**green** circles are stars, **gold** lines the constellation, "
-             "**cyan** rings stars hidden by clouds (inferred), **red** satellites.")
+    subtitle("Point at the sky and AstraGraph draws the constellation: "
+             "<b style='color:#50dc50'>green</b> circles are stars, "
+             "<b style='color:#ffbe28'>gold</b> lines the constellation, "
+             "<b style='color:#3cdcff'>cyan</b> rings stars hidden by clouds (inferred), "
+             "<b style='color:#ff5a5a'>red</b> satellites.")
     pipeline_config = PipelineConfig.from_mapping(config)
     source = st.radio("Source", ["Demo sky", "Webcam", "Upload photo or video"],
                       horizontal=True)
@@ -290,8 +292,8 @@ def live_camera(db: ConstellationDB, config: dict) -> None:
 def sky_chart(model: SkyWorldModel, db: ConstellationDB, moment: datetime,
               lat: float, lon: float, highlight: str | None = None):
     """Polar sky chart: zenith centre, N up, E left (as seen looking up)."""
-    fig = plt.figure(figsize=(7.2, 7.2), facecolor=SKY_BG)
-    ax = fig.add_subplot(projection="polar", facecolor=PANEL_BG)
+    fig = plt.figure(figsize=(7.2, 7.2), facecolor="none")  # let the starfield show
+    ax = fig.add_subplot(projection="polar", facecolor=(0.05, 0.08, 0.15, 0.55))
     ax.set_theta_zero_location("N")
     ax.set_theta_direction(1)  # counter-clockwise: east on the left
     ax.set_ylim(0, 90)
@@ -334,7 +336,7 @@ def sky_chart(model: SkyWorldModel, db: ConstellationDB, moment: datetime,
 def time_travel(db: ConstellationDB, model: SkyWorldModel,
                 lat: float, lon: float, tz: ZoneInfo) -> None:
     st.header("⏳ Time Travel")
-    st.write("Slide through time to see where the constellations will be. "
+    subtitle("Slide through time to see where the constellations will be. "
              "Positions are computed from real orbital mechanics, not guessed.")
     col1, col2, col3 = st.columns(3)
     now_local = datetime.now(tz)
@@ -445,6 +447,8 @@ def show_sky_status(model: SkyWorldModel, name: str, lat: float, lon: float,
 def learn(db: ConstellationDB, model: SkyWorldModel,
           lat: float, lon: float, tz: ZoneInfo) -> None:
     st.header("📚 Learn")
+    subtitle("Meet the constellations: their brightest stars, the best month to look "
+             "and where they are in your sky tonight.")
     name = st.selectbox("Choose a constellation", db.list_constellations(),
                         index=db.list_constellations().index("Orion"), key="learn_name")
     graph = db[name]
@@ -523,7 +527,7 @@ def quiz_figure(quiz: Quiz, pending: str | None, result: QuizResult | None):
                                              line=dict(color=QUIZ_COLORS["pending"], width=3)),
                                  showlegend=False))
     fig.update_layout(
-        paper_bgcolor=SKY_BG, plot_bgcolor=PANEL_BG, height=560,
+        paper_bgcolor=CHART_BG, plot_bgcolor=CHART_PANEL, height=560,
         margin=dict(l=10, r=10, t=10, b=10), dragmode=False, clickmode="event+select",
         legend=dict(font=dict(color="#c9d6f2"), orientation="h", y=-0.02),
         xaxis=dict(visible=False), yaxis=dict(visible=False, scaleanchor="x"),
@@ -667,6 +671,8 @@ def info_tab(academy: AstronomyAcademy, model: SkyWorldModel,
 
 def academy_mode(model: SkyWorldModel, lat: float, lon: float, tz: ZoneInfo) -> None:
     st.header("🎓 AstroAcademy")
+    subtitle("Build constellations star by star, then discover the myths and the "
+             "science behind them.")
     try:
         academy = load_academy()
     except Exception as exc:
@@ -682,6 +688,7 @@ def academy_mode(model: SkyWorldModel, lat: float, lon: float, tz: ZoneInfo) -> 
 # --------------------------------------------------------------------- main
 def main() -> None:
     st.set_page_config(page_title="AstraGraph", page_icon="✨", layout="wide")
+    apply_theme()
     try:
         db, model, config = load_resources()
     except Exception as exc:
