@@ -216,7 +216,8 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
 .ag-orrery .r3 {{ inset: 0%; animation-duration: 22s; --planet: #c7a8ff; }}
 @keyframes ag-spin {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
 
-.ag-card {{ height: 100%; padding: 1.1rem 1.2rem 0.6rem 1.2rem; border-radius: 18px;
+.ag-card {{ display: flex; flex-direction: column; box-sizing: border-box;
+  min-height: 16.5rem; padding: 1.1rem 1.2rem 0.6rem 1.2rem; border-radius: 18px;
   background: var(--ag-glass); border: 1px solid var(--ag-glass-border);
   backdrop-filter: blur(10px); transition: transform .3s ease, box-shadow .3s ease, border-color .3s; }}
 .ag-card:hover {{ transform: translateY(-4px); border-color: rgba(255,190,40,0.45);
@@ -224,7 +225,12 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
 .ag-card .icon {{ font-size: 1.9rem; }}
 .ag-card .name {{ font-family: 'Orbitron', sans-serif; font-weight: 600; color: var(--ag-gold-soft);
   margin: 0.3rem 0 0.35rem 0; letter-spacing: 0.04em; }}
-.ag-card .desc {{ color: #b9c5e4; font-size: 0.92rem; min-height: 4.2em; }}
+.ag-card .desc {{ color: #b9c5e4; font-size: 0.92rem; flex: 1; }}
+/* equal-height cards: their buttons line up */
+[data-testid="stColumn"]:has(.ag-card) .stButton {{ margin-top: 0.2rem; }}
+/* hide the link icon Streamlit adds next to headings */
+[data-testid="stHeaderActionElements"], .stMarkdown h1 a, .stMarkdown h2 a,
+.stMarkdown h3 a {{ display: none !important; }}
 
 .ag-tonight {{ padding: 1.3rem 1.5rem; border-radius: 20px; margin-bottom: 1.4rem;
   background: linear-gradient(135deg, rgba(12,22,52,0.75), rgba(10,14,34,0.6));
@@ -234,7 +240,7 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
 .ag-tonight .head .t {{ font-family: 'Orbitron', sans-serif; color: var(--ag-gold-soft);
   font-size: 1.25rem; letter-spacing: 0.05em; }}
 .ag-tonight .head .where {{ color: var(--ag-muted); font-size: 0.9rem; }}
-.ag-tonight .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+.ag-tonight .grid {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.9rem; margin-top: 0.9rem; }}
 .ag-stat {{ background: rgba(255,255,255,0.03); border: 1px solid rgba(156,194,255,0.12);
   border-radius: 14px; padding: 0.75rem 0.9rem; }}
@@ -247,7 +253,11 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
   background: rgba(156,194,255,0.10); border: 1px solid rgba(156,194,255,0.25); color: #dbe5ff; }}
 .ag-chip.gold {{ background: rgba(255,190,40,0.12); border-color: rgba(255,190,40,0.45);
   color: var(--ag-gold-soft); }}
+@media (max-width: 1100px) {{ .ag-card {{ min-height: 19rem; }} }}
+@media (max-width: 1350px) {{ .ag-tonight .grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }} }}
+@media (max-width: 640px) {{ .ag-tonight .grid {{ grid-template-columns: 1fr; }} }}
 @media (max-width: 760px) {{
+  .ag-card {{ min-height: 0; }}
   .ag-hero {{ grid-template-columns: 1fr; padding: 1.2rem; }}
   .ag-orrery {{ width: 180px; }}
 }}
