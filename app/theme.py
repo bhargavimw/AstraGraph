@@ -139,7 +139,7 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
 }}
 .ag-logo {{ display: flex; align-items: center; gap: 0.8rem; margin: 0.2rem 0 0.4rem 0;
   padding-left: 10px; }}
-.ag-logo .orb {{ width: 40px; height: 40px; border-radius: 50%;
+.ag-logo .orb {{ flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #fff8dc 0%, var(--ag-gold) 35%, #b8640a 75%, #3b1d00 100%);
   box-shadow: 0 0 18px rgba(255,190,40,0.65), 0 0 46px rgba(255,190,40,0.25);
   animation: ag-pulse 4s ease-in-out infinite; position: relative; }}
@@ -150,8 +150,8 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
                        50% {{ box-shadow: 0 0 24px rgba(255,190,40,0.85), 0 0 60px rgba(255,190,40,0.35); }} }}
 @keyframes ag-orbit {{ from {{ transform: rotateX(70deg) rotateZ(0deg); }}
                        to {{ transform: rotateX(70deg) rotateZ(360deg); }} }}
-.ag-logo .name {{ font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1.45rem;
-  letter-spacing: 0.08em; background: linear-gradient(90deg, #fff, var(--ag-gold-soft));
+.ag-logo .name {{ font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 1.2rem;
+  letter-spacing: 0.06em; white-space: nowrap; background: linear-gradient(90deg, #fff, var(--ag-gold-soft));
   -webkit-background-clip: text; background-clip: text; color: transparent; }}
 .ag-tagline {{ color: var(--ag-muted); font-size: 0.85rem; margin-bottom: 0.8rem; }}
 
