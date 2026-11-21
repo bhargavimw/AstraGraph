@@ -9,3 +9,6 @@ skyfield-data>=6.0
 fastapi>=0.115
 uvicorn[standard]>=0.30
 python-multipart>=0.0.9
+# Official IANA time-zone database for zoneinfo. Required on Windows (no system
+# database) and for older aliases such as Asia/Calcutta that browsers still send.
+tzdata>=2024.1

@@ -85,6 +85,15 @@ def test_tonight_summary(client: TestClient) -> None:
     assert data["dusk_utc"].endswith("Z") and data["dawn_utc"].endswith("Z")
 
 
+def test_time_zone_aliases_are_accepted(client: TestClient) -> None:
+    # Chrome reports India's zone as "Asia/Calcutta" (the older alias of
+    # Asia/Kolkata); both must work, which needs the tzdata package.
+    delhi = {"lat": 28.6139, "lon": 77.209, "at": "2024-01-15T21:00:00+05:30"}
+    for tz in ("Asia/Calcutta", "Asia/Kolkata"):
+        r = client.get("/tonight", params={**delhi, "tz": tz})
+        assert r.status_code == 200, (tz, r.text)
+
+
 def test_tonight_before_dark(client: TestClient) -> None:
     data = client.get("/tonight", params={**NYC, "at": "2024-01-15T12:00:00-05:00"}).json()
     assert data["darkness"]["state"] == "light"
