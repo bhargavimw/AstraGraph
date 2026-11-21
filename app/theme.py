@@ -137,7 +137,8 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
   border-right: 1px solid var(--ag-glass-border);
   backdrop-filter: blur(8px);
 }}
-.ag-logo {{ display: flex; align-items: center; gap: 0.7rem; margin: 0.2rem 0 0.4rem 0; }}
+.ag-logo {{ display: flex; align-items: center; gap: 0.8rem; margin: 0.2rem 0 0.4rem 0;
+  padding-left: 10px; }}
 .ag-logo .orb {{ width: 40px; height: 40px; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #fff8dc 0%, var(--ag-gold) 35%, #b8640a 75%, #3b1d00 100%);
   box-shadow: 0 0 18px rgba(255,190,40,0.65), 0 0 46px rgba(255,190,40,0.25);
@@ -187,9 +188,74 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
 }}
 [data-testid="stTabs"] button[aria-selected="true"] p {{ color: var(--ag-gold) !important; }}
 
+/* ---------- home page ---------- */
+.ag-hero {{ display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 2rem;
+  align-items: center; padding: 1.6rem 2rem; margin-bottom: 1.4rem; border-radius: 22px;
+  background: linear-gradient(135deg, rgba(20,30,64,0.65), rgba(30,16,60,0.45));
+  border: 1px solid var(--ag-glass-border); backdrop-filter: blur(10px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4); }}
+.ag-hero .kicker {{ color: var(--ag-ice); letter-spacing: 0.25em; font-size: 0.78rem;
+  text-transform: uppercase; }}
+.ag-hero .title {{ font-family: 'Orbitron', sans-serif; font-weight: 800; line-height: 1.15;
+  font-size: clamp(1.8rem, 3.6vw, 3rem); margin: 0.4rem 0 0.8rem 0;
+  background: linear-gradient(90deg, #ffffff, var(--ag-gold-soft) 55%, var(--ag-ice));
+  -webkit-background-clip: text; background-clip: text; color: transparent; }}
+.ag-hero .lead {{ color: #c9d6f2; font-size: 1.05rem; max-width: 38rem; }}
+.ag-orrery {{ position: relative; width: min(280px, 100%); aspect-ratio: 1; margin: 0 auto; }}
+.ag-orrery .sun {{ position: absolute; inset: 41%; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fffbe6, var(--ag-gold) 45%, #c26a00);
+  box-shadow: 0 0 30px rgba(255,190,40,0.8), 0 0 80px rgba(255,150,20,0.35);
+  animation: ag-pulse 4s ease-in-out infinite; }}
+.ag-orrery .ring {{ position: absolute; border-radius: 50%;
+  border: 1px dashed rgba(156,194,255,0.28); animation: ag-spin linear infinite; }}
+.ag-orrery .ring::after {{ content: ""; position: absolute; top: -6px; left: 50%;
+  width: 12px; height: 12px; margin-left: -6px; border-radius: 50%;
+  background: var(--planet, #9cc2ff); box-shadow: 0 0 12px var(--planet, #9cc2ff); }}
+.ag-orrery .r1 {{ inset: 28%; animation-duration: 7s; --planet: #9cc2ff; }}
+.ag-orrery .r2 {{ inset: 14%; animation-duration: 13s; --planet: #ff9f7a; }}
+.ag-orrery .r3 {{ inset: 0%; animation-duration: 22s; --planet: #c7a8ff; }}
+@keyframes ag-spin {{ from {{ transform: rotate(0deg); }} to {{ transform: rotate(360deg); }} }}
+
+.ag-card {{ height: 100%; padding: 1.1rem 1.2rem 0.6rem 1.2rem; border-radius: 18px;
+  background: var(--ag-glass); border: 1px solid var(--ag-glass-border);
+  backdrop-filter: blur(10px); transition: transform .3s ease, box-shadow .3s ease, border-color .3s; }}
+.ag-card:hover {{ transform: translateY(-4px); border-color: rgba(255,190,40,0.45);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.45), 0 0 24px rgba(255,190,40,0.15); }}
+.ag-card .icon {{ font-size: 1.9rem; }}
+.ag-card .name {{ font-family: 'Orbitron', sans-serif; font-weight: 600; color: var(--ag-gold-soft);
+  margin: 0.3rem 0 0.35rem 0; letter-spacing: 0.04em; }}
+.ag-card .desc {{ color: #b9c5e4; font-size: 0.92rem; min-height: 4.2em; }}
+
+.ag-tonight {{ padding: 1.3rem 1.5rem; border-radius: 20px; margin-bottom: 1.4rem;
+  background: linear-gradient(135deg, rgba(12,22,52,0.75), rgba(10,14,34,0.6));
+  border: 1px solid rgba(255,190,40,0.25); backdrop-filter: blur(10px); }}
+.ag-tonight .head {{ display: flex; justify-content: space-between; align-items: baseline;
+  flex-wrap: wrap; gap: 0.5rem; }}
+.ag-tonight .head .t {{ font-family: 'Orbitron', sans-serif; color: var(--ag-gold-soft);
+  font-size: 1.25rem; letter-spacing: 0.05em; }}
+.ag-tonight .head .where {{ color: var(--ag-muted); font-size: 0.9rem; }}
+.ag-tonight .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.9rem; margin-top: 0.9rem; }}
+.ag-stat {{ background: rgba(255,255,255,0.03); border: 1px solid rgba(156,194,255,0.12);
+  border-radius: 14px; padding: 0.75rem 0.9rem; }}
+.ag-stat .k {{ color: var(--ag-muted); font-size: 0.78rem; text-transform: uppercase;
+  letter-spacing: 0.12em; }}
+.ag-stat .v {{ color: #fff; font-size: 1.15rem; font-weight: 600; margin-top: 0.15rem; }}
+.ag-stat .s {{ color: #b9c5e4; font-size: 0.86rem; margin-top: 0.15rem; }}
+.ag-chips {{ display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.9rem; }}
+.ag-chip {{ padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.85rem;
+  background: rgba(156,194,255,0.10); border: 1px solid rgba(156,194,255,0.25); color: #dbe5ff; }}
+.ag-chip.gold {{ background: rgba(255,190,40,0.12); border-color: rgba(255,190,40,0.45);
+  color: var(--ag-gold-soft); }}
+@media (max-width: 760px) {{
+  .ag-hero {{ grid-template-columns: 1fr; padding: 1.2rem; }}
+  .ag-orrery {{ width: 180px; }}
+}}
+
 /* ---------- comfort ---------- */
 @media (prefers-reduced-motion: reduce) {{
-  .ag-stars, .ag-stars::after, .ag-nebula, .ag-shooting, .ag-logo .orb, .ag-logo .orb::after {{
+  .ag-stars, .ag-stars::after, .ag-nebula, .ag-shooting, .ag-logo .orb, .ag-logo .orb::after,
+  .ag-orrery .sun, .ag-orrery .ring {{
     animation: none !important; }}
   .ag-shooting {{ display: none; }}
 }}
@@ -229,3 +295,8 @@ def sidebar_logo() -> None:
 def subtitle(text: str) -> None:
     """Muted one-line introduction under a page heading."""
     st.markdown(f'<p class="ag-subtitle">{text}</p>', unsafe_allow_html=True)
+
+
+def html(markup: str) -> None:
+    """Render trusted, app-generated HTML."""
+    st.markdown(markup, unsafe_allow_html=True)
