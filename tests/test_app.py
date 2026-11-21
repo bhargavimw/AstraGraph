@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -163,19 +163,65 @@ def run_app(mode: str | None = None, *, timeout: float = 60) -> AppTest:
     return app
 
 
-def test_app_starts_in_live_camera_mode_without_errors() -> None:
+def test_app_starts_on_home_page_without_errors() -> None:
     app = run_app()
     assert not app.exception
     assert not app.error
-    assert any("Live Camera" in h.value for h in app.header)
+    assert any("Welcome to AstraGraph" in h.value for h in app.header)
+    page = " ".join(m.value for m in app.markdown)
+    assert "Tonight's sky" in page and "Your window to the night sky" in page
+
+
+def test_home_cards_open_each_mode() -> None:
+    app = run_app()
+    next(b for b in app.button if b.label == "Open Time Travel →").click().run()
+    assert not app.exception
+    assert app.sidebar.radio[0].value == "Time Travel"
+    assert any("Time Travel" in h.value for h in app.header)
 
 
 def test_live_camera_demo_sky_identifies_constellation() -> None:
-    app = run_app()
+    app = run_app("Live Camera")
     app.slider[0].set_value(30).run()
     app.button[0].click().run()
     assert not app.exception and not app.error
     assert any("Orion" in s.value for s in app.success)
+
+
+def test_tonight_summary_for_a_january_evening(db) -> None:
+    from zoneinfo import ZoneInfo
+
+    from astragraph.world_model import SkyWorldModel
+    from tonight import tonight_summary
+
+    ny = ZoneInfo("America/New_York")
+    model = SkyWorldModel(constellation_db=db)
+    noon = datetime(2024, 1, 15, 17, 0, tzinfo=timezone.utc)  # 12:00 EST
+    night = tonight_summary(model, db, 40.7128, -74.006, ny, now=noon)
+    assert not night.dark_now and not night.never_dark
+    assert night.dusk.astimezone(ny).hour == 17
+    assert night.viewing_time == night.dusk + timedelta(hours=1)
+    assert night.moon_phase == "Waxing Crescent" and night.moon_emoji == "🌒"
+    assert "Orion" in [c.name for c in night.constellations]
+    assert night.best is not None and night.best.altitude == max(
+        c.altitude for c in night.constellations)
+    assert len(night.bright_stars) == 5
+
+    late = tonight_summary(model, db, 40.7128, -74.006, ny,
+                           now=datetime(2024, 1, 16, 8, 0, tzinfo=timezone.utc))  # 03:00
+    assert late.dark_now and late.dusk == night.dusk  # same night, already in progress
+
+
+def test_tonight_summary_handles_midnight_sun(db) -> None:
+    from zoneinfo import ZoneInfo
+
+    from astragraph.world_model import SkyWorldModel
+    from tonight import tonight_summary
+
+    model = SkyWorldModel(constellation_db=db)
+    night = tonight_summary(model, db, 69.65, 18.96, ZoneInfo("Europe/Oslo"),
+                            now=datetime(2024, 6, 21, 12, tzinfo=timezone.utc))
+    assert night.never_dark and not night.dark_now
 
 
 def test_time_travel_mode_shows_prediction_message() -> None:
