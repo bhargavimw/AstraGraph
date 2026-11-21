@@ -4,6 +4,7 @@ Run with:
     streamlit run app/demo.py
 
 Modes (sidebar):
+    Home         – welcome page with tonight's sky for your location.
     Live Camera  – detect stars and identify constellations in a webcam
                    stream, an uploaded photo/video, or a built-in demo sky.
     Time Travel  – slide up to 12 hours either way and see the predicted sky.
@@ -38,7 +39,8 @@ from astragraph.synthetic import demo_sky_clip  # noqa: E402
 from astragraph.viz import plot_constellation  # noqa: E402
 from astragraph.world_model import SkyWorldModel, WorldModelConfig  # noqa: E402
 from sky_chart import animated_sky_chart  # noqa: E402
-from theme import CHART_BG, CHART_PANEL, apply_theme, sidebar_logo, subtitle  # noqa: E402
+from theme import CHART_BG, CHART_PANEL, apply_theme, html, sidebar_logo, subtitle  # noqa: E402
+from tonight import tonight_summary  # noqa: E402
 from utils import FPSCounter, annotate_frame, downscale  # noqa: E402
 
 CONFIG_PATH = ROOT / "config.yaml"
@@ -47,6 +49,7 @@ MONTHS = ["January", "February", "March", "April", "May", "June", "July",
           "August", "September", "October", "November", "December"]
 COMPASS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 GOLD_HEX = "#ffbe28"
+MODES = ["Home", "Live Camera", "Time Travel", "Learn", "Academy"]
 COMMON_TIMEZONES = [
     "UTC", "America/New_York", "America/Chicago", "America/Denver",
     "America/Los_Angeles", "Europe/London", "Europe/Paris", "Asia/Kolkata",
@@ -88,13 +91,13 @@ def rise_then_set(lookup, day: date) -> tuple[datetime | None, datetime | None]:
 def sidebar(config: dict) -> tuple[str, float, float, ZoneInfo]:
     sidebar_logo()
     mode = st.sidebar.radio(
-        "Mode", ["Live Camera", "Time Travel", "Learn", "Academy"],
-        help="Live Camera finds constellations in images; Time Travel predicts "
-             "the sky; Learn explains each constellation; Academy has quizzes "
-             "and constellation stories.",
+        "Mode", MODES, key="mode",
+        help="Home shows tonight's sky; Live Camera finds constellations in images; "
+             "Time Travel predicts the sky; Learn explains each constellation; "
+             "Academy has quizzes and constellation stories.",
     )
     section = config.get("world_model") or {}
-    with st.sidebar.expander("📍 Your location", expanded=mode != "Live Camera"):
+    with st.sidebar.expander("📍 Your location", expanded=mode not in ("Live Camera",)):
         lat = st.number_input("Latitude (°N)", -90.0, 90.0,
                               float(section.get("default_lat", 40.7128)), step=0.5,
                               format="%.4f")
@@ -652,6 +655,103 @@ def academy_mode(model: SkyWorldModel, lat: float, lon: float, tz: ZoneInfo) -> 
         info_tab(academy, model, lat, lon, tz)
 
 
+# --------------------------------------------------------------------- home
+MODE_CARDS = [
+    ("Live Camera", "🔭", "Point a camera at the sky and watch AstraGraph draw the "
+                         "constellation, even through clouds."),
+    ("Time Travel", "⏳", "Play the sky forward or back: an animated chart of the "
+                         "next 24 hours."),
+    ("Learn", "📚", "Charts, key stars, the best month to look and tonight's "
+                   "rise and set times."),
+    ("Academy", "🎓", "Connect the dots to build constellations and discover the "
+                     "myths behind them."),
+]
+
+
+def go_to(mode: str) -> None:
+    st.session_state["mode"] = mode
+
+
+def tonight_card(model: SkyWorldModel, db: ConstellationDB, lat: float, lon: float,
+                 tz: ZoneInfo) -> None:
+    try:
+        with st.spinner("Checking tonight's sky…"):
+            night = tonight_summary(model, db, lat, lon, tz)
+    except Exception as exc:
+        st.error(f"Could not work out tonight's sky for this location: {exc}")
+        return
+
+    def local(moment: datetime | None) -> str:
+        return "—" if moment is None else moment.astimezone(tz).strftime("%H:%M")
+
+    if night.never_dark:
+        dark_value, dark_sub = "Never fully dark", "Summer twilight lasts all night here"
+    elif night.dark_now:
+        dark_value, dark_sub = "Dark right now", f"until about {local(night.dawn)}"
+    else:
+        dark_value, dark_sub = f"From {local(night.dusk)}", f"until {local(night.dawn)}"
+    if night.best:
+        best = night.best
+        best_value = best.name
+        best_sub = (f"{best.altitude:.0f}° up in the {best.direction} "
+                    f"at {local(night.viewing_time)}")
+    else:
+        best_value, best_sub = "None of the 8", "Try another hour or location"
+    chips = "".join(
+        f'<span class="ag-chip{" gold" if i == 0 else ""}">{c.name} · {c.direction}</span>'
+        for i, c in enumerate(night.constellations)
+    )
+    stars = ", ".join(night.bright_stars) or "—"
+    html(f"""
+<div class="ag-tonight">
+  <div class="head"><span class="t">🌌 Tonight's sky</span>
+    <span class="where">{lat:.2f}°, {lon:.2f}° · {tz.key}</span></div>
+  <div class="grid">
+    <div class="ag-stat"><div class="k">Darkness</div><div class="v">{dark_value}</div>
+      <div class="s">{dark_sub}</div></div>
+    <div class="ag-stat"><div class="k">Moon</div>
+      <div class="v">{night.moon_emoji} {night.moon_phase}</div>
+      <div class="s">{night.moon_illuminated:.0%} lit · {night.moon_advice}</div></div>
+    <div class="ag-stat"><div class="k">Look for</div><div class="v">⭐ {best_value}</div>
+      <div class="s">{best_sub}</div></div>
+    <div class="ag-stat"><div class="k">Brightest stars up</div>
+      <div class="v" style="font-size:1rem">{stars}</div></div>
+  </div>
+  <div class="ag-chips">{chips}</div>
+</div>
+""")
+
+
+def home(db: ConstellationDB, model: SkyWorldModel, lat: float, lon: float,
+         tz: ZoneInfo) -> None:
+    html("""
+<div class="ag-hero">
+  <div>
+    <div class="kicker">AstraGraph · learn &amp; explore</div>
+    <div class="title">Your window to the night sky</div>
+    <div class="lead">Find constellations with your camera, travel through time to see
+      tomorrow's sky, and learn the stories written in the stars. Everything runs
+      on your own device.</div>
+  </div>
+  <div class="ag-orrery" aria-hidden="true">
+    <div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
+    <div class="sun"></div>
+  </div>
+</div>
+""")
+    st.header("Welcome to AstraGraph")
+    tonight_card(model, db, lat, lon, tz)
+    st.markdown("### Explore")
+    for column, (mode, icon, text) in zip(st.columns(4), MODE_CARDS):
+        with column:
+            html(f'<div class="ag-card"><div class="icon">{icon}</div>'
+                 f'<div class="name">{mode}</div><div class="desc">{text}</div></div>')
+            st.button(f"Open {mode} →", key=f"open_{mode}", on_click=go_to, args=(mode,),
+                      width="stretch")
+    st.caption("Tip: set your location and time zone in the sidebar so Tonight's sky "
+               "matches where you are.")
+
+
 # --------------------------------------------------------------------- main
 def main() -> None:
     st.set_page_config(page_title="AstraGraph", page_icon="✨", layout="wide")
@@ -663,7 +763,9 @@ def main() -> None:
         st.stop()
     mode, lat, lon, tz = sidebar(config)
     started = clock.perf_counter()
-    if mode == "Live Camera":
+    if mode == "Home":
+        home(db, model, lat, lon, tz)
+    elif mode == "Live Camera":
         live_camera(db, config)
     elif mode == "Time Travel":
         time_travel(db, model, lat, lon, tz)
