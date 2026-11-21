@@ -25,6 +25,16 @@ from zoneinfo import ZoneInfo, available_timezones
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Load pandas fully on the main thread *before* any chart is drawn. Plotly
+# imports pandas lazily the first time it validates chart data; when Streamlit
+# renders two charts at once on separate threads, one of them can see a
+# half-imported pandas and crash with "partially initialized module 'pandas'
+# has no attribute 'Series' (most likely due to a circular import)". This was
+# seen on Windows. Importing plotly's validators here as well finishes all of
+# that work up front.
+import pandas  # noqa: F401
+import plotly.graph_objects  # noqa: F401
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
