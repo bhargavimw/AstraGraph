@@ -286,3 +286,26 @@ def test_sun_altitude_and_sky_darkness(model: SkyWorldModel) -> None:
     assert model.sky_darkness(noon, *NYC) == "day"
     assert model.sky_darkness(utc("2024-01-15T22:00:00"), *NYC) == "twilight"
     assert model.sky_darkness(utc("2024-01-16T03:00:00"), *NYC) == "night"
+
+
+def test_darkness_window(model: SkyWorldModel) -> None:
+    ny = ZoneInfo("America/New_York")
+    dusk, dawn = model.darkness_window(date(2024, 1, 15), *NYC, tz=ny)
+    assert dusk is not None and dawn is not None
+    assert dusk.astimezone(ny).hour == 17 and dawn.astimezone(ny).hour == 6
+    assert (dawn - dusk) > timedelta(hours=11)  # long winter night
+    summer_dusk, summer_dawn = model.darkness_window(date(2024, 6, 21), *NYC, tz=ny)
+    assert (summer_dawn - summer_dusk) < timedelta(hours=7)  # short summer night
+    # Tromsø, Norway (69.6° N): midnight sun, never dark at midsummer.
+    oslo = ZoneInfo("Europe/Oslo")
+    assert model.darkness_window(date(2024, 6, 21), 69.65, 18.96, tz=oslo) == (None, None)
+
+
+def test_moon_info_phases(model: SkyWorldModel) -> None:
+    # January 2024: new Moon on the 11th, first quarter on the 18th, full on the 25th.
+    new = model.moon_info(utc("2024-01-11T12:00:00"), *NYC)
+    first = model.moon_info(utc("2024-01-18T12:00:00"), *NYC)
+    full = model.moon_info(utc("2024-01-25T12:00:00"), *NYC)
+    assert new["phase_name"] == "New Moon" and new["illuminated"] < 0.02
+    assert first["phase_name"] == "First Quarter" and 0.4 < first["illuminated"] < 0.65
+    assert full["phase_name"] == "Full Moon" and full["illuminated"] > 0.98
