@@ -252,10 +252,29 @@ p, li, label, .stMarkdown {{ color: var(--ag-text); }}
   .ag-orrery {{ width: 180px; }}
 }}
 
+/* ---------- quiz starburst ---------- */
+.ag-burst {{ position: fixed; left: 50%; top: 45%; width: 0; height: 0; z-index: 9999;
+  pointer-events: none; }}
+.ag-burst span {{ position: absolute; left: 0; top: 0; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ag-gold); box-shadow: 0 0 12px var(--ag-gold), 0 0 24px rgba(255,190,40,0.6);
+  transform: rotate(var(--a)) translateX(0); opacity: 0;
+  animation: ag-burst 1.6s cubic-bezier(.15,.7,.3,1) forwards; animation-delay: var(--d); }}
+.ag-burst span:nth-child(3n) {{ background: #9cc2ff; box-shadow: 0 0 12px #9cc2ff; }}
+.ag-burst span:nth-child(4n) {{ background: #ffffff; box-shadow: 0 0 12px #ffffff; }}
+.ag-burst .core {{ position: absolute; left: -60px; top: -60px; width: 120px; height: 120px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(255,240,200,0.9), rgba(255,190,40,0) 70%);
+  animation: ag-flash 1.2s ease-out forwards; opacity: 0; }}
+@keyframes ag-burst {{
+  0% {{ opacity: 1; transform: rotate(var(--a)) translateX(0) scale(1.4); }}
+  80% {{ opacity: 1; }}
+  100% {{ opacity: 0; transform: rotate(var(--a)) translateX(var(--r)) scale(0.4); }} }}
+@keyframes ag-flash {{ 0% {{ opacity: 0.95; transform: scale(0.3); }}
+                       100% {{ opacity: 0; transform: scale(3); }} }}
+
 /* ---------- comfort ---------- */
 @media (prefers-reduced-motion: reduce) {{
   .ag-stars, .ag-stars::after, .ag-nebula, .ag-shooting, .ag-logo .orb, .ag-logo .orb::after,
-  .ag-orrery .sun, .ag-orrery .ring {{
+  .ag-orrery .sun, .ag-orrery .ring, .ag-burst span, .ag-burst .core {{
     animation: none !important; }}
   .ag-shooting {{ display: none; }}
 }}
@@ -280,6 +299,19 @@ LOGO_HTML = """
 <div class="ag-logo"><div class="orb"></div><div class="name">ASTRAGRAPH</div></div>
 <div class="ag-tagline">Learn &amp; explore the night sky</div>
 """
+
+
+def _starburst_html(rays: int = 36, seed: int = 5) -> str:
+    rng = random.Random(seed)
+    spans = "".join(
+        f'<span style="--a:{i * 360 / rays + rng.uniform(-4, 4):.1f}deg;'
+        f'--r:{rng.randint(160, 340)}px;--d:{rng.uniform(0, 0.25):.2f}s"></span>'
+        for i in range(rays)
+    )
+    return f'<div class="ag-burst" aria-hidden="true"><div class="core"></div>{spans}</div>'
+
+
+STARBURST_HTML = _starburst_html()
 
 
 def apply_theme() -> None:
