@@ -329,3 +329,44 @@ def test_academy_instant_feedback_and_progress() -> None:
     _button(app, "Submit").click().run()
     assert any("Perfect" in s.value and "★★★" in s.value for s in app.success)
     assert "Constellations mastered: 1 / 8" in app.get("progress")[0].proto.text
+
+
+def test_app_preloads_pandas_before_charts(demo_module) -> None:
+    # Regression test: lazy pandas imports inside Plotly crashed on Windows when
+    # two charts rendered on different threads ("partially initialized module
+    # 'pandas'"). The app must import pandas fully at start-up.
+    import pandas as pd
+
+    assert "pandas" in vars(demo_module)
+    assert hasattr(pd, "Series") and hasattr(pd, "Index")
+
+
+def test_charts_build_concurrently_without_import_errors(db) -> None:
+    # Build several Plotly figures on parallel threads, as Streamlit can.
+    from concurrent.futures import ThreadPoolExecutor
+    from zoneinfo import ZoneInfo
+
+    from astragraph.academy import AstronomyAcademy
+    from astragraph.world_model import SkyWorldModel
+    from sky_chart import animated_sky_chart
+
+    model = SkyWorldModel(constellation_db=db)
+    academy = AstronomyAcademy(db)
+    start = datetime(2024, 1, 15, 2, tzinfo=timezone.utc)
+
+    def sky():
+        return animated_sky_chart(model, db, start, 40.7, -74.0, ZoneInfo("UTC"),
+                                  hours=(0.0, 0.5))
+
+    def quiz(demo):
+        return demo.quiz_figure(academy.generate_quiz("Orion"), None, None)
+
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("astragraph_app2", ROOT / "app" / "demo.py")
+    demo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(demo)
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(sky) for _ in range(2)] + [pool.submit(quiz, demo) for _ in range(2)]
+        figures = [f.result() for f in futures]  # raises if any thread failed
+    assert all(fig.data for fig in figures)
