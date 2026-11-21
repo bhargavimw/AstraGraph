@@ -134,13 +134,24 @@ def test_video_processor_survives_pipeline_errors(db, demo_module, monkeypatch) 
     assert out.shape == frame.shape and out.max() > 0  # error text drawn
 
 
-def test_sky_chart_renders(db, demo_module) -> None:
+def test_animated_sky_chart_has_frames_and_hover(db) -> None:
+    from zoneinfo import ZoneInfo
+
     from astragraph.world_model import SkyWorldModel
+    from sky_chart import animated_sky_chart
 
     model = SkyWorldModel(constellation_db=db)
-    fig = demo_module.sky_chart(model, db, datetime(2024, 1, 15, 2, tzinfo=timezone.utc),
-                                40.7128, -74.006, highlight="Orion")
-    assert fig.axes and fig.axes[0].name == "polar"
+    fig = animated_sky_chart(model, db, datetime(2024, 1, 15, 2, tzinfo=timezone.utc),
+                             40.7128, -74.006, ZoneInfo("America/New_York"),
+                             initial_hours=3.0, highlight="Orion")
+    assert len(fig.frames) == 49  # every half hour across 24 hours
+    assert fig.layout.sliders[0].active == 30  # +3 h
+    assert fig.layout.sliders[0].steps[30].label == "00:00"  # 21:00 EST + 3 h
+    stars = fig.data[2]
+    assert len(stars.r) > 50 and all(0 <= r <= 90 for r in stars.r)
+    assert any(row[0] == "Betelgeuse" for row in stars.customdata)
+    assert "Orion" in fig.data[3].text  # constellation label shown
+    assert fig.layout.polar.angularaxis.direction == "counterclockwise"  # east on the left
 
 
 # ------------------------------------------------------------ whole app
