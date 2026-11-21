@@ -95,3 +95,18 @@ body {
 }
 .field-input:hover { border-color: rgb(232 236 246 / 0.25); }
 .field-input:focus-visible { outline-offset: 1px; border-color: var(--color-gold); }
+
+@keyframes scrollcue {
+  0% { transform: translateY(-100%); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(250%); opacity: 0; }
+}
+
+@keyframes draw {
+  from { stroke-dasharray: 400; stroke-dashoffset: 400; }
+  to { stroke-dasharray: 400; stroke-dashoffset: 0; }
+}
+@keyframes fadeout {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
