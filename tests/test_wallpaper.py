@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import pytest
 from PIL import Image
 
+from astragraph.styles import STYLES, get_style
 from astragraph.wallpaper import (
     ASPECT_PRESETS,
     RenderOptions,
@@ -181,3 +182,25 @@ def test_render_to_bytes(renderer: WallpaperRenderer) -> None:
 def test_resolution_for_unknown_aspect(renderer: WallpaperRenderer) -> None:
     with pytest.raises(ValueError, match="Unknown aspect"):
         renderer.resolution_for("not_an_aspect")
+
+
+# ---------------------------------------------------------------- styles
+
+def test_every_style_renders(renderer: WallpaperRenderer) -> None:
+    for name in STYLES:
+        img = renderer.render(
+            NYC[0], NYC[1], MOMENT, style=name, aspect="phone"
+        )
+        assert isinstance(img, Image.Image)
+        assert img.size == (1080, 2340)
+
+
+def test_get_style_unknown_raises() -> None:
+    with pytest.raises(KeyError, match="Unknown style"):
+        get_style("not_a_style")
+
+
+def test_get_style_known_returns() -> None:
+    for name in ("classic", "minimal", "vintage", "aurora"):
+        style = get_style(name)
+        assert style.name == name
