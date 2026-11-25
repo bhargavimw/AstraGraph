@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import PagePlaceholder from "@/components/ui/PagePlaceholder";
+import LiveCamera from "@/components/live/LiveCamera";
 
-export const metadata: Metadata = { title: "Live" };
+export const metadata: Metadata = {
+  title: "Live Camera",
+  description: "Point your camera at the night sky: AstraGraph finds the stars, names the constellations and spots satellites.",
+};
 
 export default function LivePage() {
-  return <PagePlaceholder label="Live Camera" title="Live" subtitle="Point your camera at the sky. Coming in step 6." />;
+  return <LiveCamera />;
 }
