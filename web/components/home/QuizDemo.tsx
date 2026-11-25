@@ -124,8 +124,8 @@ export default function QuizDemo() {
         </button>
       </div>
       {done && (
-        <Link href="/academy" className="mt-2 inline-flex items-center gap-2 text-sm text-cyan hover:underline">
-          Try the full Academy <ArrowRightIcon size={16} />
+        <Link href="/learn?c=Cassiopeia" className="mt-2 inline-flex items-center gap-2 text-sm text-cyan hover:underline">
+          Meet Cassiopeia <ArrowRightIcon size={16} />
         </Link>
       )}
     </div>

@@ -41,7 +41,6 @@ export default function Footer() {
           <Link href="/live" className="hover:text-ink">Live</Link>
           <Link href="/time-travel" className="hover:text-ink">Time Travel</Link>
           <Link href="/learn" className="hover:text-ink">Learn</Link>
-          <Link href="/academy" className="hover:text-ink">Academy</Link>
         </nav>
       </div>
     </footer>

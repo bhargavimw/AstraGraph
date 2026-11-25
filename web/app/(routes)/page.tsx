@@ -54,7 +54,7 @@ export default function HomePage() {
 
       <StorySection
         index="04"
-        label="Academy"
+        label="Test yourself"
         title={<>Test yourself.<br /><span className="text-muted">Draw the sky.</span></>}
         visual={<QuizDemo />}
         flip
