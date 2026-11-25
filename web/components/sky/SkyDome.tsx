@@ -28,6 +28,8 @@ export interface SkyDomeProps {
   compact?: boolean;
   className?: string;
   ariaLabel?: string;
+  /** Called with the constellation under a click (or null for empty sky). */
+  onConstellationClick?: (name: string | null) => void;
 }
 
 const GOLD = "245, 196, 81";
@@ -56,10 +58,13 @@ export default function SkyDome({
   compact = false,
   className = "",
   ariaLabel = "Interactive sky chart",
+  onConstellationClick,
 }: SkyDomeProps) {
   const { ref, size, visible } = useCanvas();
   const reduced = useReducedMotion();
   const started = useRef<number | null>(null);
+  // Geometry of the last frame drawn, for hit-testing clicks.
+  const lastFrame = useRef<{ scene: SkyScene; cx: number; cy: number; radius: number } | null>(null);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -74,6 +79,7 @@ export default function SkyDome({
       const cx = width / 2;
       const cy = height / 2;
       const font = compact ? 10 : 12;
+      lastFrame.current = { scene: current, cx, cy, radius };
 
       // Dome interior, tinted by the Sun's altitude.
       const colors = domeColors(current.sunAltitude);
@@ -205,12 +211,40 @@ export default function SkyDome({
     };
   }, [ref, size, visible, reduced, scene, sceneAt, highlight, showLabels, compact]);
 
+  /** Constellation whose star is nearest the pointer (within 18 px), if any. */
+  const hitTest = (clientX: number, clientY: number): string | null => {
+    const frame = lastFrame.current;
+    const canvas = ref.current;
+    if (!frame || !canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    let best: { name: string; d: number } | null = null;
+    for (const c of frame.scene.constellations) {
+      for (const p of Object.values(c.points)) {
+        if (p.alt < 0) continue;
+        const q = domeProject(p, frame.cx, frame.cy, frame.radius);
+        const d = Math.hypot(q.x - x, q.y - y);
+        if (d < 18 && (!best || d < best.d)) best = { name: c.name, d };
+      }
+    }
+    return best?.name ?? null;
+  };
+
   return (
     <canvas
       ref={ref}
       role="img"
       aria-label={ariaLabel}
       className={`block aspect-square w-full ${className}`}
+      onClick={onConstellationClick ? (e) => onConstellationClick(hitTest(e.clientX, e.clientY)) : undefined}
+      onPointerMove={
+        onConstellationClick
+          ? (e) => {
+              e.currentTarget.style.cursor = hitTest(e.clientX, e.clientY) ? "pointer" : "default";
+            }
+          : undefined
+      }
     />
   );
 }
