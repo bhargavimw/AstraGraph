@@ -12,6 +12,8 @@ const NAME = "Cassiopeia";
 const W = 420;
 const H = 300;
 
+const round2 = (v: number) => Math.round(v * 100) / 100;
+
 const key = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
 export default function QuizDemo() {
@@ -23,7 +25,10 @@ export default function QuizDemo() {
   const layout = useMemo(() => {
     if (!cas) return new Map<string, { x: number; y: number }>();
     const pts = fitToBox(chartProject(cas.stars), W, H, 48);
-    return new Map(cas.stars.map((s, i) => [s.name, pts[i]!]));
+    // Round to 0.01 px: the server (Node) and the browser compute trigonometry
+    // with slightly different libraries, so unrounded values can differ in the
+    // 14th decimal place and trigger a React hydration mismatch.
+    return new Map(cas.stars.map((s, i) => [s.name, { x: round2(pts[i]!.x), y: round2(pts[i]!.y) }]));
   }, [cas]);
   const correct = useMemo(() => new Set(cas?.lines.map(([a, b]) => key(a, b)) ?? []), [cas]);
   if (!cas) return null;
@@ -78,11 +83,11 @@ export default function QuizDemo() {
         })()}
         {cas.stars.map((s) => {
           const p = layout.get(s.name)!;
-          const r = magnitudeToRadius(s.magnitude, 2.2);
+          const r = round2(magnitudeToRadius(s.magnitude, 2.2));
           const isPending = pending === s.name;
           return (
             <g key={s.name}>
-              <circle cx={p.x} cy={p.y} r={r * 3} fill={rgba(ciToRgb(s.ci), 0.15)} />
+              <circle cx={p.x} cy={p.y} r={round2(r * 3)} fill={rgba(ciToRgb(s.ci), 0.15)} />
               <circle cx={p.x} cy={p.y} r={r} fill={rgba(ciToRgb(s.ci), 1)} />
               {isPending && (
                 <circle cx={p.x} cy={p.y} r={16} fill="none" stroke="#5ce1e6" strokeWidth={1.5}
