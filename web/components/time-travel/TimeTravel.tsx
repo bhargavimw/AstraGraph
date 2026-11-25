@@ -160,7 +160,7 @@ export default function TimeTravel() {
         <div className="flex flex-col items-center">
           {/* Readout */}
           <div className="mb-4 w-full text-center">
-            <p className="label-caps mb-2">Time travel · {formatLocation(location)}</p>
+            <h1 className="label-caps mb-2">Time travel · {formatLocation(location)}</h1>
             <p className="font-display text-6xl font-light tabular-nums text-ink sm:text-7xl" aria-live="off">
               {timeText}
             </p>
@@ -285,14 +285,14 @@ export default function TimeTravel() {
         </div>
 
         {/* Desktop list */}
-        <aside className="glass hidden self-start overflow-hidden rounded-2xl lg:sticky lg:top-[calc(var(--nav-height)+1rem)] lg:block">
+        <section aria-label="Where the constellations are" className="glass hidden self-start overflow-hidden rounded-2xl lg:sticky lg:top-[calc(var(--nav-height)+1rem)] lg:block">
           <div className="flex items-baseline justify-between px-4 pb-2 pt-4">
             <p className="label-caps">Where are they?</p>
             <p className="text-[0.65rem] text-muted">az · alt</p>
           </div>
           {list ?? <ConstellationSkeleton className="py-10" label="Loading constellations" />}
           <p className="px-4 py-3 text-xs text-muted">Hover a row to find it on the dome; click a constellation to follow it.</p>
-        </aside>
+        </section>
       </div>
 
       {/* Mobile bottom sheet */}
