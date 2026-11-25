@@ -146,9 +146,11 @@ const locationQuery = ({ lat, lon, tz }: ObserverLocation) =>
 export const api = {
   health: (opts?: RequestOptions) => request("/health", HealthSchema, {}, opts),
 
-  sky: (location: ObserverLocation, offsetHours = 0, opts?: RequestOptions): Promise<ApiSky> => {
+  /** Sky at `at` (ISO time with offset; default now) plus `offsetHours`. */
+  sky: (location: ObserverLocation, offsetHours = 0, opts?: RequestOptions, at?: string): Promise<ApiSky> => {
     const q = locationQuery(location);
     q.set("offset_hours", String(offsetHours));
+    if (at) q.set("at", at);
     return request(`/sky?${q}`, SkyResponseSchema, {}, opts);
   },
 
