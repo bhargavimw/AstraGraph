@@ -15,7 +15,10 @@ export default function Hero() {
     transition: { duration: 1.1, ease: EASE, delay },
   });
   return (
-    <section className="relative flex min-h-[100svh] flex-col items-center justify-center px-6 pt-[var(--nav-height)] text-center">
+    <section className="relative flex min-h-[100svh] flex-col items-center px-6 pt-[var(--nav-height)] text-center">
+      {/* Content centred in the space above the scroll cue; the cue is in the
+          normal flow so it can never overlap the buttons on short screens. */}
+      <div className="flex w-full flex-1 flex-col items-center justify-center py-10">
       <motion.p {...enter(0.05)} className="label-caps mb-8">
         A planetarium in your browser
       </motion.p>
@@ -50,13 +53,15 @@ export default function Hero() {
         </a>
       </motion.div>
 
+      </div>
+
       <motion.a
         href="#tonight"
         aria-label="Scroll to tonight's sky"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.4, duration: 1 }}
-        className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 text-muted"
+        className="mb-8 flex flex-col items-center gap-3 text-muted"
       >
         <span className="text-[0.65rem] tracking-[0.4em] uppercase">Scroll</span>
         <span className="relative block h-10 w-px overflow-hidden bg-line">
