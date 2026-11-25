@@ -13,6 +13,7 @@ export const NAV_LINKS = [
   { href: "/live", label: "Live" },
   { href: "/time-travel", label: "Time Travel" },
   { href: "/learn", label: "Learn" },
+  { href: "/gallery", label: "Gallery" },
 ] as const;
 
 const EASE = [0.22, 1, 0.36, 1] as const;

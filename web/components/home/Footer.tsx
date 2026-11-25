@@ -16,13 +16,19 @@ export default function Footer() {
         <div>
           <p className="label-caps mb-4">Data</p>
           <ul className="space-y-2 text-sm text-muted">
-            <li>Positions: Skyfield with the NASA JPL DE421 ephemeris</li>
             <li>
-              Stars:{" "}
+              Star data:{" "}
               <a href="https://github.com/astronexus/HYG-Database" className="underline decoration-line underline-offset-4 hover:text-ink">
-                HYG Database
+                HYG Database v4.1
               </a>{" "}
-              v4.1, CC BY-SA 4.0
+              (CC BY-SA 4.0)
+            </li>
+            <li>
+              Sky positions:{" "}
+              <a href="https://rhodesmill.org/skyfield/" className="underline decoration-line underline-offset-4 hover:text-ink">
+                Skyfield
+              </a>{" "}
+              + JPL DE421 ephemeris
             </li>
             <li>Constellation boundaries: IAU</li>
           </ul>
@@ -41,6 +47,7 @@ export default function Footer() {
           <Link href="/live" className="hover:text-ink">Live</Link>
           <Link href="/time-travel" className="hover:text-ink">Time Travel</Link>
           <Link href="/learn" className="hover:text-ink">Learn</Link>
+          <Link href="/gallery" className="hover:text-ink">Gallery</Link>
         </nav>
       </div>
     </footer>
