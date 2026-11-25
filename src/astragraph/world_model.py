@@ -77,6 +77,7 @@ class CatalogStar:
     pmdec_mas: float
     parallax_mas: float
     constellation: str
+    bv_mag: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -131,6 +132,7 @@ def load_catalog(path: str | Path = DEFAULT_CATALOG) -> tuple[CatalogStar, ...]:
                 pmdec_mas=float(row["pmdec_mas"]),
                 parallax_mas=float(row["parallax_mas"]),
                 constellation=row["constellation"],
+                bv_mag=float(row["bv"]) if row.get("bv", "").strip() else 0.0,
             )
             for row in csv.DictReader(lines)
         )

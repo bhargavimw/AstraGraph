@@ -54,3 +54,16 @@ world_model:
   min_altitude: 10       # degrees above horizon
   timezone: America/New_York   # used for local times in demos
   star_catalog: data/bright_stars.csv
+
+# --- Wallpaper renderer ----------------------------------------------------------
+
+wallpaper:
+  output_dir: outputs/wallpapers      # rendered PNGs go here
+  thumbnail_dir: outputs/wallpapers/thumbs   # WebP thumbnails
+  frontend_bundle: outputs/frontend_bundle   # copy-ready for frontend public/
+  default_width: 1080                 # phone wallpaper width
+  default_height: 2340                # phone wallpaper height
+  thumbnail_width: 400                # thumbnail width in px
+  default_style: classic              # classic | minimal | vintage | aurora
+  magnitude_limit: 6.0                # faintest star magnitude to draw
+  dpi: 300

@@ -7,7 +7,7 @@ and entries without a Hipparcos number (duplicate companion entries).
 Usage:
     curl -L -o hygdata_v41.csv \\
       https://raw.githubusercontent.com/astronexus/HYG-Database/main/hyg/CURRENT/hygdata_v41.csv
-    python scripts/build_star_catalog.py hygdata_v41.csv --count 300
+    python scripts/build_star_catalog.py hygdata_v41.csv --limit 3000
 
 Columns written:
     name          proper name, else Bayer/Flamsteed designation, else "HIP <n>"
@@ -19,6 +19,7 @@ Columns written:
     pmdec_mas     proper motion in Dec, mas/year
     parallax_mas  parallax, mas (from HYG distance in parsecs)
     constellation IAU constellation abbreviation
+    bv            B-V colour index (mag, may be empty)
 """
 
 from __future__ import annotations
@@ -31,7 +32,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FIELDS = [
     "name", "hip", "ra_hours", "dec_degrees", "magnitude",
-    "pmra_mas", "pmdec_mas", "parallax_mas", "constellation",
+    "pmra_mas", "pmdec_mas", "parallax_mas", "constellation", "bv",
 ]
 
 
@@ -45,7 +46,7 @@ def display_name(row: dict[str, str]) -> str:
     return f"HIP {int(float(row['hip']))}"
 
 
-def build(source: Path, count: int) -> list[dict[str, str]]:
+def build(source: Path, limit: int = 3000) -> list[dict[str, str]]:
     with source.open(newline="", encoding="utf-8") as handle:
         rows = [
             r for r in csv.DictReader(handle)
@@ -61,6 +62,7 @@ def build(source: Path, count: int) -> list[dict[str, str]]:
         seen.add(name)
         dist = float(row["dist"]) if row["dist"].strip() else 0.0
         parallax = 1000.0 / dist if 0.0 < dist < 100000.0 else 0.0
+        bv = row["ci"].strip() if "ci" in row and row["ci"].strip() else ""
         out.append({
             "name": name,
             "hip": str(int(float(row["hip"]))),
@@ -71,8 +73,9 @@ def build(source: Path, count: int) -> list[dict[str, str]]:
             "pmdec_mas": f"{float(row['pmdec'] or 0):.2f}",
             "parallax_mas": f"{parallax:.3f}",
             "constellation": row["con"].strip(),
+            "bv": bv,
         })
-        if len(out) == count:
+        if len(out) == limit:
             break
     return out
 
@@ -80,11 +83,15 @@ def build(source: Path, count: int) -> list[dict[str, str]]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Extract bright stars from HYG.")
     parser.add_argument("source", type=Path, help="path to hygdata_v41.csv")
-    parser.add_argument("--count", type=int, default=300)
+    parser.add_argument("--limit", type=int, default=3000,
+                        help="number of brightest stars to write (default: 3000)")
+    parser.add_argument("--count", type=int, default=None,
+                        help=("deprecated alias for --limit"))
     parser.add_argument("--output", type=Path, default=ROOT / "data" / "bright_stars.csv")
     args = parser.parse_args(argv)
 
-    stars = build(args.source, args.count)
+    limit = args.limit if args.count is None else args.count
+    stars = build(args.source, limit)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", newline="", encoding="utf-8") as handle:
         handle.write(
