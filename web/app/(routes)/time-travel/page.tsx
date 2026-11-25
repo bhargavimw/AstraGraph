@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import PagePlaceholder from "@/components/ui/PagePlaceholder";
+import TimeTravel from "@/components/time-travel/TimeTravel";
 
-export const metadata: Metadata = { title: "Time Travel" };
+export const metadata: Metadata = {
+  title: "Time Travel",
+  description: "Slide through 24 hours of sky and watch the constellations rise, cross and set.",
+};
 
 export default function TimeTravelPage() {
-  return <PagePlaceholder label="Time Travel" title="Time Travel" subtitle="Slide through 24 hours of sky. Coming in step 4." />;
+  return <TimeTravel />;
 }

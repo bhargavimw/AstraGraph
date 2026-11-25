@@ -115,3 +115,39 @@ body {
   0% { transform: translateX(-120%); }
   100% { transform: translateX(320%); }
 }
+
+/* Time Travel slider */
+.time-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 2.75rem; /* 44px touch target */
+  background: transparent;
+  cursor: pointer;
+}
+.time-slider::-webkit-slider-runnable-track {
+  height: 2px;
+  background: linear-gradient(90deg, rgb(92 225 230 / 0.35), rgb(245 196 81 / 0.7), rgb(92 225 230 / 0.35));
+  border-radius: 2px;
+}
+.time-slider::-moz-range-track {
+  height: 2px;
+  background: linear-gradient(90deg, rgb(92 225 230 / 0.35), rgb(245 196 81 / 0.7), rgb(92 225 230 / 0.35));
+  border-radius: 2px;
+}
+.time-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: #f5c451;
+  box-shadow: 0 0 0 4px rgb(245 196 81 / 0.18), 0 0 16px rgb(245 196 81 / 0.6);
+}
+.time-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: #f5c451;
+  box-shadow: 0 0 0 4px rgb(245 196 81 / 0.18), 0 0 16px rgb(245 196 81 / 0.6);
+}
