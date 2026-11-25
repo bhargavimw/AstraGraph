@@ -218,6 +218,8 @@ class WallpaperRenderer:
         ``moment`` must be timezone-aware (naive datetimes are rejected by
         ``SkyWorldModel``).  ``location_name`` is used for the caption.
         """
+        from astragraph.overlays import RenderOptions, apply_overlays
+
         if isinstance(style, str):
             style = get_style(style)
 
@@ -371,8 +373,3 @@ class WallpaperRenderer:
         buf = io.BytesIO()
         img.save(buf, format=format)
         return buf.getvalue()
-
-
-# Re-export RenderOptions (defined in astragraph.overlays) so that
-# ``from astragraph.wallpaper import RenderOptions`` keeps working.
-from astragraph.overlays import RenderOptions  # noqa: E402

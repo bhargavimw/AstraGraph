@@ -10,9 +10,9 @@ import pytest
 from PIL import Image
 
 from astragraph.styles import STYLES, get_style
+from astragraph.overlays import RenderOptions
 from astragraph.wallpaper import (
     ASPECT_PRESETS,
-    RenderOptions,
     WallpaperRenderer,
     bv_to_rgb,
     star_radius,
@@ -217,7 +217,7 @@ def _render_hash(renderer, lat=NYC[0], lon=NYC[1], moment=MOMENT, **kwargs) -> s
 
 
 def test_overlay_constellation_lines_changes_hash(renderer: WallpaperRenderer) -> None:
-    from astragraph.wallpaper import RenderOptions
+    from astragraph.overlays import RenderOptions
 
     all_on = _render_hash(renderer, options=RenderOptions())
     lines_off = _render_hash(
@@ -227,7 +227,7 @@ def test_overlay_constellation_lines_changes_hash(renderer: WallpaperRenderer) -
 
 
 def test_overlay_labels_changes_hash(renderer: WallpaperRenderer) -> None:
-    from astragraph.wallpaper import RenderOptions
+    from astragraph.overlays import RenderOptions
 
     all_on = _render_hash(renderer, options=RenderOptions())
     labels_off = _render_hash(
@@ -237,7 +237,7 @@ def test_overlay_labels_changes_hash(renderer: WallpaperRenderer) -> None:
 
 
 def test_overlay_moon_changes_hash(renderer: WallpaperRenderer) -> None:
-    from astragraph.wallpaper import RenderOptions
+    from astragraph.overlays import RenderOptions
 
     all_on = _render_hash(renderer, options=RenderOptions())
     moon_off = _render_hash(renderer, options=RenderOptions(draw_moon=False))
@@ -246,7 +246,7 @@ def test_overlay_moon_changes_hash(renderer: WallpaperRenderer) -> None:
 
 
 def test_overlay_planets_changes_hash(renderer: WallpaperRenderer) -> None:
-    from astragraph.wallpaper import RenderOptions
+    from astragraph.overlays import RenderOptions
 
     all_off = _render_hash(
         renderer,
@@ -272,7 +272,7 @@ def test_overlay_planets_changes_hash(renderer: WallpaperRenderer) -> None:
 
 
 def test_overlay_caption_changes_hash(renderer: WallpaperRenderer) -> None:
-    from astragraph.wallpaper import RenderOptions
+    from astragraph.overlays import RenderOptions
 
     all_on = _render_hash(renderer, options=RenderOptions())
     caption_off = _render_hash(renderer, options=RenderOptions(draw_caption=False))
@@ -280,7 +280,7 @@ def test_overlay_caption_changes_hash(renderer: WallpaperRenderer) -> None:
 
 
 def test_all_overlays_off_still_valid(renderer: WallpaperRenderer) -> None:
-    from astragraph.wallpaper import RenderOptions
+    from astragraph.overlays import RenderOptions
 
     img = renderer.render(
         NYC[0],
@@ -301,7 +301,7 @@ def test_all_overlays_off_still_valid(renderer: WallpaperRenderer) -> None:
 
 
 def test_moon_below_horizon_skipped(renderer: WallpaperRenderer) -> None:
-    from astragraph.wallpaper import RenderOptions
+    from astragraph.overlays import RenderOptions
 
     # Sydney at 2026-11-26 12:00 AEDT — moon below horizon (midday).
     sydney = (-33.8688, 151.2093)
@@ -317,7 +317,7 @@ def test_moon_below_horizon_skipped(renderer: WallpaperRenderer) -> None:
 
 
 def test_caption_override(renderer: WallpaperRenderer) -> None:
-    from astragraph.wallpaper import RenderOptions
+    from astragraph.overlays import RenderOptions
 
     default = _render_hash(renderer, options=RenderOptions())
     overridden = _render_hash(
