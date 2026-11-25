@@ -61,3 +61,24 @@ export const ChevronUpIcon = (p: IconProps) => (
     <path d="m6 15 6-6 6 6" />
   </Icon>
 );
+
+export const UploadIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 15.5V4.5M7.5 9 12 4.5 16.5 9" />
+    <path d="M4.5 14.5v3.5a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-3.5" />
+  </Icon>
+);
+
+export const SparkleIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3.5c.6 4.2 2.3 5.9 6.5 6.5-4.2.6-5.9 2.3-6.5 6.5-.6-4.2-2.3-5.9-6.5-6.5 4.2-.6 5.9-2.3 6.5-6.5Z" />
+    <path d="M18.5 15.5c.2 1.5.8 2.1 2.3 2.3-1.5.2-2.1.8-2.3 2.3-.2-1.5-.8-2.1-2.3-2.3 1.5-.2 2.1-.8 2.3-2.3Z" />
+  </Icon>
+);
+
+export const LayersIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m12 4 8.5 4.5L12 13 3.5 8.5Z" />
+    <path d="m3.5 12.5 8.5 4.5 8.5-4.5M3.5 16.5 12 21l8.5-4.5" />
+  </Icon>
+);
