@@ -242,20 +242,29 @@ export default function Starfield() {
       pointer.y = Math.max(-1, Math.min(1, (e.beta - 45) / 30));
     };
 
-    resize();
-    window.addEventListener("resize", resize);
-    if (reduced) {
-      draw(performance.now(), true);
-    } else {
-      window.addEventListener("pointermove", onPointer, { passive: true });
-      // iOS needs an explicit permission prompt for tilt; we don't prompt,
-      // so tilt parallax applies only where the browser allows it freely.
-      window.addEventListener("deviceorientation", onTilt, { passive: true });
-      document.addEventListener("visibilitychange", onVisibility);
-      start();
-    }
+    // Start once the page has finished its own work (idle), so the starfield
+    // never competes with the first render; it then fades in.
+    const boot = () => {
+      resize();
+      window.addEventListener("resize", resize);
+      canvas.style.opacity = "1";
+      if (reduced) {
+        draw(performance.now(), true);
+      } else {
+        window.addEventListener("pointermove", onPointer, { passive: true });
+        // iOS needs an explicit permission prompt for tilt; we don't prompt,
+        // so tilt parallax applies only where the browser allows it freely.
+        window.addEventListener("deviceorientation", onTilt, { passive: true });
+        document.addEventListener("visibilitychange", onVisibility);
+        start();
+      }
+    };
+    const hasIdle = typeof window.requestIdleCallback === "function";
+    const idle: number = hasIdle ? window.requestIdleCallback(boot, { timeout: 1200 }) : window.setTimeout(boot, 300);
 
     return () => {
+      if (hasIdle) window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", onPointer);
@@ -268,7 +277,8 @@ export default function Starfield() {
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 -z-10 h-full w-full"
+      style={{ opacity: 0 }}
+      className="pointer-events-none fixed inset-0 -z-10 h-full w-full transition-opacity duration-1000"
     />
   );
 }
