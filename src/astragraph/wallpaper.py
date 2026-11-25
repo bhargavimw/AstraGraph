@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import io
 import math
-from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -127,18 +126,6 @@ def zenithal_equidistant(
 
 
 # --------------------------------------------------------------------------- #
-# Render options
-# --------------------------------------------------------------------------- #
-
-@dataclass
-class RenderOptions:
-    """Rendering options shared by the renderer and (later) overlays."""
-
-    seed: int = 0
-    magnitude_limit: float = 6.0
-
-
-# --------------------------------------------------------------------------- #
 # Renderer
 # --------------------------------------------------------------------------- #
 
@@ -224,11 +211,12 @@ class WallpaperRenderer:
         aspect: str = "phone",
         resolution: tuple[int, int] | None = None,
         options: RenderOptions | None = None,
+        location_name: str | None = None,
     ) -> Image.Image:
         """Render one wallpaper frame as a PIL Image.
 
         ``moment`` must be timezone-aware (naive datetimes are rejected by
-        ``SkyWorldModel``).
+        ``SkyWorldModel``).  ``location_name`` is used for the caption.
         """
         if isinstance(style, str):
             style = get_style(style)
@@ -251,6 +239,22 @@ class WallpaperRenderer:
 
         self._draw_background(img, style, cx, cy, sky_radius)
         self._draw_stars(img, draw, stars, style, cx, cy, sky_radius)
+
+        # Apply overlays (constellation lines, labels, moon, planets, caption).
+        from astragraph.overlays import apply_overlays
+
+        img = apply_overlays(
+            img,
+            self,
+            lat,
+            lon,
+            moment,
+            style,
+            options,
+            cx,
+            cy,
+            sky_radius,
+        )
 
         return img
 
@@ -367,3 +371,8 @@ class WallpaperRenderer:
         buf = io.BytesIO()
         img.save(buf, format=format)
         return buf.getvalue()
+
+
+# Re-export RenderOptions (defined in astragraph.overlays) so that
+# ``from astragraph.wallpaper import RenderOptions`` keeps working.
+from astragraph.overlays import RenderOptions  # noqa: E402

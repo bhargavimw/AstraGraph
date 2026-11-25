@@ -204,3 +204,124 @@ def test_get_style_known_returns() -> None:
     for name in ("classic", "minimal", "vintage", "aurora"):
         style = get_style(name)
         assert style.name == name
+
+
+# ---------------------------------------------------------------- overlays
+
+def _render_hash(renderer, lat=NYC[0], lon=NYC[1], moment=MOMENT, **kwargs) -> str:
+    opts = kwargs.pop("options", RenderOptions())
+    img = renderer.render(lat, lon, moment, options=opts, **kwargs)
+    import hashlib
+
+    return hashlib.sha256(img.tobytes()).hexdigest()
+
+
+def test_overlay_constellation_lines_changes_hash(renderer: WallpaperRenderer) -> None:
+    from astragraph.wallpaper import RenderOptions
+
+    all_on = _render_hash(renderer, options=RenderOptions())
+    lines_off = _render_hash(
+        renderer, options=RenderOptions(draw_constellation_lines=False)
+    )
+    assert all_on != lines_off
+
+
+def test_overlay_labels_changes_hash(renderer: WallpaperRenderer) -> None:
+    from astragraph.wallpaper import RenderOptions
+
+    all_on = _render_hash(renderer, options=RenderOptions())
+    labels_off = _render_hash(
+        renderer, options=RenderOptions(draw_constellation_labels=False)
+    )
+    assert all_on != labels_off
+
+
+def test_overlay_moon_changes_hash(renderer: WallpaperRenderer) -> None:
+    from astragraph.wallpaper import RenderOptions
+
+    all_on = _render_hash(renderer, options=RenderOptions())
+    moon_off = _render_hash(renderer, options=RenderOptions(draw_moon=False))
+    # Moon is above horizon at NYC 2026-11-25 23:00, so toggling must change.
+    assert all_on != moon_off
+
+
+def test_overlay_planets_changes_hash(renderer: WallpaperRenderer) -> None:
+    from astragraph.wallpaper import RenderOptions
+
+    all_off = _render_hash(
+        renderer,
+        options=RenderOptions(
+            draw_constellation_lines=False,
+            draw_constellation_labels=False,
+            draw_moon=False,
+            draw_caption=False,
+            draw_planets=False,
+        ),
+    )
+    planets_on = _render_hash(
+        renderer,
+        options=RenderOptions(
+            draw_constellation_lines=False,
+            draw_constellation_labels=False,
+            draw_moon=False,
+            draw_caption=False,
+            draw_planets=True,
+        ),
+    )
+    assert all_off != planets_on
+
+
+def test_overlay_caption_changes_hash(renderer: WallpaperRenderer) -> None:
+    from astragraph.wallpaper import RenderOptions
+
+    all_on = _render_hash(renderer, options=RenderOptions())
+    caption_off = _render_hash(renderer, options=RenderOptions(draw_caption=False))
+    assert all_on != caption_off
+
+
+def test_all_overlays_off_still_valid(renderer: WallpaperRenderer) -> None:
+    from astragraph.wallpaper import RenderOptions
+
+    img = renderer.render(
+        NYC[0],
+        NYC[1],
+        MOMENT,
+        style="classic",
+        aspect="phone",
+        options=RenderOptions(
+            draw_constellation_lines=False,
+            draw_constellation_labels=False,
+            draw_moon=False,
+            draw_planets=False,
+            draw_caption=False,
+        ),
+    )
+    assert isinstance(img, Image.Image)
+    assert img.size == (1080, 2340)
+
+
+def test_moon_below_horizon_skipped(renderer: WallpaperRenderer) -> None:
+    from astragraph.wallpaper import RenderOptions
+
+    # Sydney at 2026-11-26 12:00 AEDT — moon below horizon (midday).
+    sydney = (-33.8688, 151.2093)
+    moment = datetime(2026, 11, 26, 12, 0, tzinfo=ZoneInfo("Australia/Sydney"))
+
+    moon_on = _render_hash(renderer, lat=sydney[0], lon=sydney[1], moment=moment,
+                           options=RenderOptions(draw_moon=True))
+    moon_off = _render_hash(renderer, lat=sydney[0], lon=sydney[1], moment=moment,
+                            options=RenderOptions(draw_moon=False))
+    # When the moon is below the horizon, toggling draw_moon must not change
+    # the output (the moon is simply omitted).
+    assert moon_on == moon_off
+
+
+def test_caption_override(renderer: WallpaperRenderer) -> None:
+    from astragraph.wallpaper import RenderOptions
+
+    default = _render_hash(renderer, options=RenderOptions())
+    overridden = _render_hash(
+        renderer,
+        options=RenderOptions(caption_override="Custom Caption Text"),
+    )
+    assert default != overridden
