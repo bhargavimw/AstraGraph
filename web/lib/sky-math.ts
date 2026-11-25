@@ -65,14 +65,14 @@ export function domeProject(
 }
 
 /**
- * Tangent-plane (gnomonic) projection of sky points around their centre,
- * oriented like the sky: east left, north up. Returns coordinates in degrees
- * with y growing upward.
+ * Tangent-plane (gnomonic) projection centred on the middle of `points`,
+ * oriented like the sky: east left, north up. The returned function projects
+ * any sky position (degrees, y growing upward) around that same centre, or
+ * returns null for positions more than 80° away from it.
  */
-export function chartProject(
+export function makeChartProjection(
   points: Array<{ ra: number; dec: number }>,
-): Array<{ x: number; y: number }> {
-  if (points.length === 0) return [];
+): (p: { ra: number; dec: number }) => { x: number; y: number } | null {
   let sx = 0, sy = 0, sz = 0;
   for (const p of points) {
     sx += Math.cos(p.dec * DEG) * Math.cos(p.ra * DEG);
@@ -81,14 +81,43 @@ export function chartProject(
   }
   const ra0 = Math.atan2(sy, sx);
   const dec0 = Math.atan2(sz, Math.hypot(sx, sy));
-  return points.map((p) => {
+  return (p) => {
     const ra = p.ra * DEG;
     const dec = p.dec * DEG;
     const cosC = Math.sin(dec0) * Math.sin(dec) + Math.cos(dec0) * Math.cos(dec) * Math.cos(ra - ra0);
+    if (cosC < 0.17) return null;
     const xi = (Math.cos(dec) * Math.sin(ra - ra0)) / cosC;
     const eta = (Math.cos(dec0) * Math.sin(dec) - Math.sin(dec0) * Math.cos(dec) * Math.cos(ra - ra0)) / cosC;
     return { x: -xi / DEG, y: eta / DEG };
-  });
+  };
+}
+
+/** Project a constellation's own stars with {@link makeChartProjection}. */
+export function chartProject(
+  points: Array<{ ra: number; dec: number }>,
+): Array<{ x: number; y: number }> {
+  if (points.length === 0) return [];
+  const project = makeChartProjection(points);
+  return points.map((p) => project(p) ?? { x: 0, y: 0 });
+}
+
+/** Box-fitting transform for projected points (preserving aspect). */
+export function fitTransform(
+  points: Array<{ x: number; y: number }>,
+  width: number,
+  height: number,
+  padding: number,
+): (p: { x: number; y: number }) => { x: number; y: number } {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const spanX = maxX - minX || 1;
+  const spanY = maxY - minY || 1;
+  const scale = Math.min((width - padding * 2) / spanX, (height - padding * 2) / spanY);
+  const offX = (width - spanX * scale) / 2;
+  const offY = (height - spanY * scale) / 2;
+  return (p) => ({ x: offX + (p.x - minX) * scale, y: offY + (maxY - p.y) * scale });
 }
 
 /** Fit projected points into a box (preserving aspect), returning pixel coords. */
@@ -99,14 +128,5 @@ export function fitToBox(
   padding: number,
 ): Array<{ x: number; y: number }> {
   if (points.length === 0) return [];
-  const xs = points.map((p) => p.x);
-  const ys = points.map((p) => p.y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const spanX = maxX - minX || 1;
-  const spanY = maxY - minY || 1;
-  const scale = Math.min((width - padding * 2) / spanX, (height - padding * 2) / spanY);
-  const offX = (width - spanX * scale) / 2;
-  const offY = (height - spanY * scale) / 2;
-  return points.map((p) => ({ x: offX + (p.x - minX) * scale, y: offY + (maxY - p.y) * scale }));
+  return points.map(fitTransform(points, width, height, padding));
 }
