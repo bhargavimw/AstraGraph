@@ -1,0 +1,14 @@
+# Everything the API needs (no Streamlit). From the repository root:
+#   pip install -r api/requirements.txt
+numpy>=1.26
+networkx>=3.2
+PyYAML>=6.0
+opencv-python-headless>=4.9
+skyfield>=1.49
+skyfield-data>=6.0
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+# Official IANA time-zone database for zoneinfo. Required on Windows (no system
+# database) and for older aliases such as Asia/Calcutta that browsers still send.
+tzdata>=2024.1
