@@ -5,6 +5,8 @@ images by matching the *shape* of the stars rather than trusting the phone's
 compass, predicts where everything will be at any time, and teaches the
 connections behind it.
 
+> **New here?** Jump to [Run the website locally](#run-the-website-locally).
+
 ## Features
 
 | Mode | What you can do |
@@ -13,7 +15,11 @@ connections behind it.
 | 🔭 **Live Camera** | Point a webcam at the sky, upload a photo or video, or run the built-in demo sky. Stars get green circles and the constellation gets gold lines with its name and confidence. Stars hidden by clouds are inferred and drawn as cyan "ghosts", satellites are tracked in red with their speed and direction, and bright objects missing from the catalog (such as planets) are flagged. |
 | ⏳ **Time Travel** | An interactive, animated sky chart: press ▶ Play to watch 24 hours of sky turn, drag the time bar, and hover any star for its name, constellation and brightness. The slider gives messages like *"In 3 hours, Orion will be at azimuth 220°, altitude 45°."*, with a warning when the Sun is up. |
 | 📚 **Learn** | Pick a constellation to see its chart, key stars, the best month to look, where it is right now and when it rises and sets tonight. |
-| 🎓 **Academy** | **Quiz:** click stars to draw a constellation. Optional instant feedback colours each line green or red as you draw it. You get a score with a 1–3 star rating, a "right shape, wrong stars" hint, the correct answer, a starburst for a perfect drawing and a "constellations mastered" progress bar; hard mode adds distractor stars. **Info:** the mythology, key stars with facts, best season and a fun fact for each constellation. |
+| 🖼️ **Gallery** | 36 pre-rendered sky wallpapers for nine cities in four styles, with filters, a lightbox and downloads. |
+
+The current website has Home, Live Camera, Time Travel, Learn and Gallery. The
+Academy quiz and info cards are still available in the legacy Streamlit app
+(`app/`).
 
 The whole app sits on an animated night sky (drifting, twinkling stars, a soft
 nebula glow and the occasional shooting star); animation switches off when
@@ -52,44 +58,128 @@ never leave your computer.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the details.
 
-## Installation
+## Project layout
 
-Requires Python 3.10 or newer.
+```
+.
+├── web/        Next.js website — the current UI
+├── api/        FastAPI service that serves the website
+├── src/        astragraph library (detection, matching, reasoning, world model)
+├── app/        legacy Streamlit UI
+├── data/       constellation stick figures, bright stars and mythology
+└── tests/
+```
+
+## Prerequisites
+
+- Python 3.10 or newer
+- Node.js 20.9 or newer (22 LTS recommended; Next.js 16 requires ≥ 20.9)
+
+The website runs as two processes: the FastAPI API and the Next.js frontend.
+Start them in two terminals.
+
+## Run the website locally
+
+Clone the repository and start the API:
 
 ```bash
 git clone https://github.com/bhargavimw/AstraGraph.git
 cd AstraGraph
-python -m venv .venv
+
+python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r api/requirements.txt
+uvicorn api.main:app --reload --port 8000
 ```
 
-Everything needed at runtime is installed by pip; the JPL ephemeris comes with
-the `skyfield-data` package, so no downloads happen when the app runs.
+Run `uvicorn` from the repository root: the API loads `config.yaml` and `data/`
+relative to it, and adds `src/` to the import path. Everything needed at runtime
+is installed by pip; the JPL ephemeris comes with the `skyfield-data` package,
+so no downloads happen when the app runs.
 
-## Running the app
+In a second terminal, from the repository root, start the website:
 
 ```bash
-streamlit run app/demo.py
+cd web
+npm install
+cp .env.example .env.local         # points at http://localhost:8000 by default
+npm run dev
 ```
 
-or `python scripts/run_app.py`. Streamlit opens http://localhost:8501.
+Open:
+
+- Website: <http://localhost:3000>
+- API documentation: <http://localhost:8000/docs>
+- API health check: <http://localhost:8000/health>
+
+The gallery (`/gallery`) is static and works without the API. The other pages
+load data from it, so if they stay on "Waking the telescope…", the API is not
+reachable.
+
+### Environment variables
+
+`web/.env.local`:
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | Base URL of the API, without a trailing slash (default `http://localhost:8000`). |
+| `NEXT_PUBLIC_SITE_URL` | Optional public site URL, used for absolute share-image links. |
+
+If you change the frontend port, allow that origin on the API:
+
+```bash
+ASTRAGRAPH_ALLOWED_ORIGINS=http://localhost:3001 uvicorn api.main:app --port 8000
+```
+
+Live Camera needs camera permission. Browsers only allow camera access on
+`localhost` or HTTPS.
+
+### Troubleshooting
+
+- **`next` reports an unsupported Node version**: switch to Node 22, e.g.
+  `nvm use 22`.
+- **Port 8000 is already in use**: run the API on another port and point the
+  website at it, e.g. `uvicorn api.main:app --port 8001` and
+  `NEXT_PUBLIC_API_URL=http://localhost:8001` in `web/.env.local`.
+- **Pages stay on "Waking the telescope…"**: the API is not running or the URL
+  is wrong; check `curl http://localhost:8000/health`.
+
+## Legacy Streamlit app
+
+The original single-process UI is still in `app/`. It needs the full Python
+requirements (Streamlit, Plotly, pandas):
+
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/run_app.py          # http://localhost:8501
+```
 
 - **Live Camera**: choose *Demo sky* to see the full pipeline on a rendered
-  sky, *Webcam* for a live stream (allow camera access; browsers only allow it
-  on `localhost` or HTTPS), or upload a photo/video.
+  sky, *Webcam* for a live stream, or upload a photo/video.
 - **Academy**: try the quiz (click two stars to draw a line between them)
   or read a constellation's info card.
 - Set your location and time zone in the sidebar for Time Travel, Learn and
   the Academy info card.
 
-Command-line demos and tests:
+## Tests and demos
+
+```bash
+source .venv/bin/activate
+pip install pytest httpx
+python -m pytest tests/test_api.py tests/test_constellation_db.py tests/test_academy.py \
+  tests/test_detect.py tests/test_reasoning.py tests/test_temporal.py tests/test_world_model.py
+```
+
+`tests/test_app.py` covers the legacy Streamlit app and needs
+`pip install -r requirements.txt`.
+
+Command-line demos:
 
 ```bash
 python scripts/demo_reasoning.py            # detection → tracking → reasoning
 python scripts/demo_world_model.py          # visible constellations + sky map
 python scripts/visualize_db.py              # render the constellation database
-pytest                                      # full test suite
 ```
 
 ## Architecture
@@ -116,8 +206,8 @@ pytest                                      # full test suite
                                      │                             │
                                      ▼                             ▼
                           ┌───────────────────────────────────────────────┐
-                          │ app/demo.py (Streamlit)                       │
-                          │ Live Camera · Time Travel · Learn · Academy   │
+                          │ web/ (Next.js) ──▶ api/ (FastAPI)             │
+                          │ app/demo.py (Streamlit, legacy)               │
                           └───────────────────────────────────────────────┘
 ```
 
@@ -133,9 +223,15 @@ pytest                                      # full test suite
 | `pipeline.py` | Runs detector → tracker → temporal graph → matcher → reasoner per frame |
 | `world_model.py` | Star positions, visibility, constellation lookup, rise/set times, Sun altitude |
 | `academy.py` | Constellation info, star profiles, connect-the-dots quizzes graded as graphs |
-| `app/` | Streamlit app: `demo.py` (pages), `theme.py` (animated sky and styling), `sky_chart.py` (animated Plotly chart), `tonight.py` (Tonight's sky), `utils.py` (OpenCV overlays) |
+| `api/` | FastAPI service for the website: `/sky`, `/tonight`, `/frame`, `/constellations`, `/quiz` and `/demo-sky` |
+| `web/` | Next.js website (App Router, TypeScript, Tailwind, Framer Motion); calls `api/` and bundles its star catalogue |
+| `app/` | Legacy Streamlit app: `demo.py` (pages), `theme.py` (animated sky and styling), `sky_chart.py` (animated Plotly chart), `tonight.py` (Tonight's sky), `utils.py` (OpenCV overlays) |
 
 ## Screenshots
+
+The screenshots below are from the Streamlit app. The Next.js website has Home,
+Live Camera, Time Travel, Learn and Gallery; the Academy screens are from the
+legacy app.
 
 **Home:** Tonight's sky for your location, over the animated starfield.
 
@@ -192,7 +288,9 @@ thresholds and the default location for the world model.
 - Constellation boundaries: International Astronomical Union, via Skyfield.
 - Reference positions in the tests were cross-checked with
   [Astropy](https://www.astropy.org/) (ERFA / IAU SOFA).
-- Built with [OpenCV](https://opencv.org/), [NetworkX](https://networkx.org/),
+- Built with [Next.js](https://nextjs.org/), [React](https://react.dev/),
+  [Tailwind CSS](https://tailwindcss.com/), [FastAPI](https://fastapi.tiangolo.com/),
+  [OpenCV](https://opencv.org/), [NetworkX](https://networkx.org/),
   [Streamlit](https://streamlit.io/), [streamlit-webrtc](https://github.com/whitphx/streamlit-webrtc),
   [Plotly](https://plotly.com/python/) and [Matplotlib](https://matplotlib.org/).
 - Constellation stories draw on Greek mythology as recorded in classical
