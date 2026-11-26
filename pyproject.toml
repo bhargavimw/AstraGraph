@@ -4,16 +4,21 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "astragraph"
-version = "0.1.0"
-description = "A graph-based constellation database and visualizer."
+version = "1.0.0"
+description = "Graph-based star detection, constellation reasoning and sky prediction."
 requires-python = ">=3.10"
 dependencies = [
     "networkx>=3.2",
     "matplotlib>=3.8",
     "PyYAML>=6.0",
+    "numpy>=1.26",
+    "opencv-python-headless>=4.9",
+    "skyfield>=1.49",
+    "skyfield-data>=6.0",
 ]
 
 [project.optional-dependencies]
+app = ["streamlit>=1.50", "streamlit-webrtc>=0.47", "plotly>=5.20"]
 dev = ["pytest>=8.0"]
 
 [tool.setuptools.packages.find]

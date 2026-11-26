@@ -1,0 +1,14 @@
+# AstraGraph theme: a night-sky palette that matches the charts and overlays.
+[theme]
+base = "dark"
+primaryColor = "#ffbe28"            # star gold (buttons, sliders, highlights)
+backgroundColor = "#070b17"         # deep night sky
+secondaryBackgroundColor = "#111a33"
+textColor = "#e6ecff"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+maxUploadSize = 200                 # MB, for short night-sky videos
